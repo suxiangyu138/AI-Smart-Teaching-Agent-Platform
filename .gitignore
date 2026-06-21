@@ -38,15 +38,16 @@ logs/
 # Maven shade plugin 产物
 dependency-reduced-pom.xml
 
-# 本地配置文件（含 API Key 等敏感信息）
-.deepseek-chatbot/
+# 本地运行时数据（配置/向量库/知识库源文件/断点缓存）
+data/
 
-# RAG 向量库持久化文件
-vector_store/
+# Playwright 测试截图/快照
+.playwright-mcp/
+*.png
 
-# 知识库PDF源文件
-math-library/
-knowledge_base/
+# RAG 断点/失败清单文件（自动生成，不提交）
+processed_files.json
+failed_files.json
 
-# 数学资料知识库
+# 数学资料知识库（原始资料目录）
 数学资料知识库/

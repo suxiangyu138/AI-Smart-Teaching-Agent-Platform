@@ -112,12 +112,22 @@ public class KnowledgeBaseController {
         }
     }
 
-    /** 从路径自动检测学段 */
+    /** 从路径自动检测学段（支持学段名 + 学科名） */
     @SuppressWarnings("all")
     private String detectStageFromPath(Path path) {
         String lower = path.toString().toLowerCase();
+
+        // 大学学科名
         if (lower.contains("university") || lower.contains("大学")
-                || lower.contains("高等")) {
+                || lower.contains("高等") || lower.contains("微积分")
+                || lower.contains("线性代数") || lower.contains("离散数学")
+                || lower.contains("概率论") || lower.contains("数理统计")
+                || lower.contains("数学建模") || lower.contains("数学竞赛")
+                || lower.contains("数学分析") || lower.contains("考研数学")
+                || lower.contains("组合数学") || lower.contains("图论")
+                || lower.contains("数值分析") || lower.contains("应用数学")
+                || lower.contains("复变函数") || lower.contains("常微分")
+                || lower.contains("抽象代数") || lower.contains("泛函分析")) {
             return UnifiedChatRequest.STAGE_UNIVERSITY;
         }
         if (lower.contains("senior") || lower.contains("高中")
@@ -130,6 +140,10 @@ public class KnowledgeBaseController {
         if (lower.contains("junior") || lower.contains("初中")
                 || lower.contains("中考")) {
             return UnifiedChatRequest.STAGE_JUNIOR;
+        }
+        // 默认：含"数学"但未匹配到学段 → 高中
+        if (lower.contains("数学")) {
+            return UnifiedChatRequest.STAGE_SENIOR;
         }
         return UnifiedChatRequest.STAGE_JUNIOR;
     }
@@ -171,12 +185,84 @@ public class KnowledgeBaseController {
         }
     }
 
+    /** 批量索引进度 */
+    @GetMapping("/progress")
+    public Map<String, Object> getProgress() {
+        return ragService.getProgress();
+    }
+
     /**
      * 获取知识库目录路径
      */
     @GetMapping("/dir")
     public Map<String, String> getKbDir() {
         return Map.of("directory", ragService.getKbDir().toAbsolutePath().toString());
+    }
+
+    /**
+     * 获取失败文件清单
+     */
+    @GetMapping("/failed-files")
+    public Map<String, Object> getFailedFiles() {
+        Map<String, String> failed = ragService.getFailedFiles();
+        return Map.of("count", failed.size(), "files",
+                failed.entrySet().stream()
+                        .map(e -> Map.of("fileName", e.getKey(), "reason", e.getValue()))
+                        .toList());
+    }
+
+    /**
+     * 清除单个失败记录（允许重试）
+     */
+    @PostMapping("/clear-failed")
+    public Map<String, Object> clearFailedFile(@RequestBody Map<String, String> body) {
+        String fileName = body.get("fileName");
+        if (fileName == null || fileName.isBlank()) {
+            return error("缺少 fileName 参数");
+        }
+        ragService.clearFailedFile(fileName);
+        return Map.of("success", true, "message", "已清除失败记录: " + fileName);
+    }
+
+    /**
+     * 重置断点缓存（强制全量重建）
+     */
+    @PostMapping("/reset-checkpoint")
+    public Map<String, Object> resetCheckpoint() {
+        ragService.resetCheckpoint();
+        return Map.of("success", true, "message", "断点已重置，下次索引将全量重建");
+    }
+
+    /**
+     * 增量索引（仅扫描新增/失败重试的文件）
+     */
+    @PostMapping("/index/incremental")
+    public Map<String, Object> indexIncremental(@RequestBody Map<String, String> body) {
+        String dirPath = body.get("dirPath");
+        if (dirPath == null || dirPath.isBlank()) {
+            return error("缺少 dirPath 参数");
+        }
+        Path path = Path.of(dirPath);
+        if (!Files.isDirectory(path)) {
+            return error("目录不存在: " + dirPath);
+        }
+        String stage = body.get("stage");
+        if (stage == null) {
+            stage = detectStageFromPath(path);
+        }
+        try {
+            Map<String, Integer> stats = ragService.indexDirectory(
+                    path, stage, body.get("apiKey"), body.get("baseUrl"));
+            long newCount = stats.values().stream().filter(v -> v > 0).count();
+            long skippedCount = stats.values().stream().filter(v -> v == 0).count();
+            long failCount = stats.values().stream().filter(v -> v < 0).count();
+            return Map.of("success", true, "directory", dirPath,
+                    "autoStage", stage, "newFiles", newCount,
+                    "skippedFiles", skippedCount, "failFiles", failCount,
+                    "details", stats);
+        } catch (Exception e) {
+            return error("增量索引失败: " + e.getMessage());
+        }
     }
 
     /**

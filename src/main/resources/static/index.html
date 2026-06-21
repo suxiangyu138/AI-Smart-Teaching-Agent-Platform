@@ -316,9 +316,12 @@ html,body{height:100%;font-family:"Microsoft YaHei","PingFang SC",-apple-system,
     💡 将 PDF 教材/题库放入知识库目录后，点击"批量索引"构建向量库。<br>
     知识库目录：<code id="kb-dir-path" style="font-size:11px;background:var(--primary-bg);padding:2px 6px;border-radius:4px">加载中...</code>
   </p>
-  <div style="display:flex;gap:8px;margin-bottom:12px">
-    <button class="top-btn" onclick="refreshKbFileList()">🔄 刷新文件列表</button>
-    <button class="top-btn" onclick="buildKbIndex()" style="background:var(--primary);color:#fff;border-color:var(--primary)">🚀 批量索引全部PDF</button>
+  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+    <button class="top-btn" onclick="refreshKbFileList()">🔄 刷新列表</button>
+    <button class="top-btn" onclick="buildKbIndex()" style="background:var(--primary);color:#fff;border-color:var(--primary)">🚀 批量索引</button>
+    <button class="top-btn" onclick="buildKbIncremental()">📥 增量索引</button>
+    <button class="top-btn" onclick="resetKbCheckpoint()">🔁 重置断点</button>
+    <button class="top-btn" onclick="loadFailedFiles()">⚠ 失败清单</button>
   </div>
   <div id="kb-file-list" style="max-height:200px;overflow-y:auto;margin-bottom:12px"></div>
   <div style="display:flex;gap:8px;margin-bottom:8px">
@@ -331,6 +334,11 @@ html,body{height:100%;font-family:"Microsoft YaHei","PingFang SC",-apple-system,
     </select>
   </div>
   <div id="kb-build-log" style="font-size:11px;color:var(--text2);max-height:100px;overflow-y:auto;background:var(--surface2);padding:8px;border-radius:8px;display:none"></div>
+  <div id="kb-progress-bar" style="display:none;margin:8px 0;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden">
+    <div id="kb-progress-fill" style="height:100%;background:var(--primary);width:0%;transition:width .3s"></div>
+  </div>
+  <div id="kb-progress-text" style="display:none;font-size:11px;color:var(--text2);text-align:center"></div>
+  <div id="kb-failed-list" style="display:none;max-height:150px;overflow-y:auto;margin:8px 0;font-size:11px"></div>
   <div class="btn-row">
     <button class="top-btn" onclick="clearKb()" style="color:#ef4444">🗑 清空知识库</button>
     <button class="btn-cancel" onclick="closeKbManager()">关闭</button>
@@ -452,7 +460,7 @@ function toggleSidebar(){
 
 // ===== 知识点渲染 =====
 function renderKnowledgePoints(){
-  let tree=document.getElementById('kp-tree'),grade=getGrade();
+  let tree=document.getElementById('kp-tree'),grade=getStage();
   let cats=KNOWLEDGE_POINTS[grade]||{};
   tree.innerHTML='';
   for(let[cat,points]of Object.entries(cats)){
@@ -463,7 +471,7 @@ function renderKnowledgePoints(){
   }
 }
 function renderFormulas(){
-  let list=document.getElementById('formula-list'),grade=getGrade();
+  let list=document.getElementById('formula-list'),grade=getStage();
   let formulas=FORMULAS[grade]||[];
   list.innerHTML=formulas.map(f=>'<div class="formula-item" onclick="quickSend(\'请解释公式：'+f.n+'\')" title="点击查询此公式"><span class="fn">'+f.n+'</span><span class="fv">'+f.v.replace(/<[^>]*>/g,'').replace(/\$\$/g,'').substring(0,40)+'...</span></div>').join('');
 }
@@ -589,14 +597,64 @@ function addMessage(text,sender){
 function addLoading(){let w=document.querySelector('.welcome-card');if(w)w.remove();let row=document.createElement('div');row.className='row ai';row.id='loading-msg';let b=document.createElement('div');b.className='bubble loading-dots';b.textContent='🤔 思考中';let d=document.createElement('span');['.','.','.'].forEach(()=>{let s=document.createElement('span');s.className='dot';s.textContent='.';d.appendChild(s)});b.appendChild(d);row.appendChild(b);chatList.appendChild(row);if(!userScrolledUp)scrollToBottom()}
 function removeLoading(){let e=document.getElementById('loading-msg');if(e) e.remove()}
 function addAiBubble(){let old=document.getElementById('ai-stream');if(old)old.removeAttribute('id');let row=document.createElement('div');row.className='row ai';row.id='ai-stream';let b=document.createElement('div');b.className='bubble';row.appendChild(b);chatList.appendChild(row)}
-function updateAiBubble(text){let row=document.getElementById('ai-stream');if(!row)return;row.querySelector('.bubble').innerHTML=marked.parse(renderLatex(text));if(!userScrolledUp)scrollToBottom()}
+function updateAiBubble(text){let row=document.getElementById('ai-stream');if(!row)return;row.querySelector('.bubble').innerHTML=marked.parse(renderLatex(text,false));if(!userScrolledUp)scrollToBottom()}
+function updateAiBubbleFinal(text){let row=document.getElementById('ai-stream');if(!row)return;row.querySelector('.bubble').innerHTML=marked.parse(renderLatex(text,true));if(!userScrolledUp)scrollToBottom()}
 function safeText(v){return typeof v==='string'?v:(v===null||v===undefined)?'':String(v)}
-function renderLatex(text){
+var RENDER_BLOCK_MAX_INLINE_LEN=80; // 短于此长度的 $$ 块在段落中转行内
+
+function renderLatex(text,isFinal){
   text=safeText(text);
-  // 支持 $$...$$ 块级公式
-  text=text.replace(/\$\$([\s\S]*?)\$\$/g,(m,f)=>{try{return katex.renderToString(f.trim(),{displayMode:true,throwOnError:false})}catch(e){return m}});
-  // 支持 $...$ 行内公式（但不匹配 $$）
-  text=text.replace(/(?<!\$)\$([^\$\n]+?)\$(?!\$)/g,(m,f)=>{try{return katex.renderToString(f.trim(),{displayMode:false,throwOnError:false})}catch(e){return m}});
+  if(typeof katex==='undefined')return text;
+
+  // 先处理 $...$ 行内公式（必须在 $$ 之前，避免把 $$ 内容误匹配）
+  text=text.replace(/(?<!\$)\$([^\$\n]+?)\$(?!\$)/g,(m,f)=>{
+    try{return katex.renderToString(f.trim(),{displayMode:false,throwOnError:false})}catch(e){return m}
+  });
+
+  // 智能处理 $$...$$：短公式在段落中转行内，长公式保持块级
+  text=text.replace(/\$\$([\s\S]*?)\$\$/g,(m,f)=>{
+    var inner=f.trim();
+    // 包含换行 → 多行公式，保持块级
+    if(/\n/.test(inner)){
+      try{return katex.renderToString(inner,{displayMode:true,throwOnError:false})}catch(e){return m}
+    }
+    // 短公式 且 不在独立行 → 渲染为行内
+    if(inner.length<RENDER_BLOCK_MAX_INLINE_LEN){
+      try{return katex.renderToString(inner,{displayMode:false,throwOnError:false})}catch(e){return m}
+    }
+    // 长公式 → 块级
+    try{return katex.renderToString(inner,{displayMode:true,throwOnError:false})}catch(e){return m}
+  });
+
+  // 流式过程中：如果还有未闭合的 $$，临时隐藏
+  if(!isFinal){
+    var openIdx=text.indexOf('$$');
+    if(openIdx>=0&&text.indexOf('$$',openIdx+2)<0){
+      text=text.substring(0,openIdx)+'<span class="katex-pending">$$</span>';
+    }
+  }else{
+    // 最终渲染：兜底自动包裹裸LaTeX
+    text=autoWrapBareLatex(text);
+    // 清除残留的未闭合 $$
+    text=text.replace(/\$\$/g,'');
+  }
+  return text;
+}
+
+/** 自动将裸数学表达式包裹为行内 $...$ */
+function autoWrapBareLatex(text){
+  if(/<span[^>]*class="katex/.test(text))return text;
+  // 匹配含 LaTeX 命令的文本片段，用 $ 包裹后行内渲染
+  text=text.replace(/(\\(?:frac|sqrt|sum|int|lim|infty|pm|mp|times|div|cdot|leq|geq|neq|approx|equiv|sim|partial|nabla|forall|exists|in|notin|subset|subseteq|cup|cap|angle|triangle|alpha|beta|gamma|delta|epsilon|theta|lambda|mu|pi|sigma|omega|mathbf|mathbb|mathcal|bar|hat|vec|dot|widetilde|widehat|overline|underline|operatorname|text|begin|end|left|right)\b[^\n$<>]*)/g,
+  function(m){
+    if(/katex|<span|<div/.test(m))return m;
+    try{return katex.renderToString(m.trim(),{displayMode:false,throwOnError:false})}catch(e){return m}
+  });
+  // 导数 f'(x) 模式
+  text=text.replace(/([a-zA-Z]\\?'{1,2}\([^)]*\)(?:\s*=\s*[^\n$<>]+)?)/g,function(m){
+    if(/katex|<span/.test(m))return m;
+    try{return katex.renderToString(m.trim(),{displayMode:false,throwOnError:false})}catch(e){return m}
+  });
   return text;
 }
 function showToast(msg){let t=document.getElementById('toast');t.textContent=msg;t.style.opacity='1';setTimeout(()=>t.style.opacity='0',1500)}
@@ -645,7 +703,8 @@ async function sendMessage(){
           }else if(currentEvent==='finish'){
             setLoading(false);statusEl.textContent='✅ 回答完成';
             lastAiFullText=aiText;favBtn.style.display='block';
-            // 如果有finish数据，用其中的fullContent
+            // 流结束：全量渲染一次（自动包裹未标记公式 + 清理未闭合 $$）
+            updateAiBubbleFinal(aiText);
             try{if(eventLines.length>0){let o=JSON.parse(eventLines.join('\n'));if(o.fullContent)lastAiFullText=o.fullContent}}
             catch(e){}
           }
@@ -793,22 +852,65 @@ async function refreshKbFileList(){
     list.innerHTML=files.map(f=>'<div class="kb-file-item"><span class="fn">📄 '+f.name+'</span><span class="fs">'+(f.size/1024).toFixed(1)+' KB</span></div>').join('');
   }catch(e){document.getElementById('kb-file-list').innerHTML='<div class="empty-hint">加载失败</div>'}
 }
+let buildPollTimer=null;
 async function buildKbIndex(){
-  let log=document.getElementById('kb-build-log');log.style.display='block';log.innerHTML='🔄 正在批量索引...\n';
+  let log=document.getElementById('kb-build-log');
+  let bar=document.getElementById('kb-progress-bar');
+  let fill=document.getElementById('kb-progress-fill');
+  let txt=document.getElementById('kb-progress-text');
+  log.style.display='block';log.innerHTML='🔄 正在批量索引...\n';
+  bar.style.display='block';txt.style.display='block';fill.style.width='0%';
   try{
     let dirResp=await fetch('/api/knowledge/dir');let dirData=await dirResp.json();
     let stageVal=document.getElementById('kb-stage-sel').value;
     let apiKey=currentConfig.apiKey||'';
     let baseUrl=currentConfig.baseUrl||'';
     let body={dirPath:dirData.directory,stage:stageVal||undefined,apiKey:apiKey,baseUrl:baseUrl};
+    // 启动索引进度轮询
+    buildPollTimer=setInterval(async()=>{
+      try{let pr=await fetch('/api/knowledge/progress');let pd=await pr.json();
+        if(pd.total>0){fill.style.width=pd.percent+'%';txt.textContent=pd.stage+' ('+pd.current+'/'+pd.total+')'}
+      }catch(e){}
+    },1000);
     let r=await fetch('/api/knowledge/index/directory',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    clearInterval(buildPollTimer);buildPollTimer=null;
     let result=await r.json();
     if(result.success){
       log.innerHTML+='✅ 索引完成！成功 '+result.successFiles+'/'+result.totalFiles+' 个文件\n';
       if(result.details){for(let[k,v]of Object.entries(result.details)){log.innerHTML+=('  '+(v>0?'✅':'❌')+' '+k+': '+(v>0?v+' 块':'失败')+'\n')}}
+      fill.style.width='100%';txt.textContent='索引完成';
+      await refreshKbFileList();await refreshKbStats();await updateKbStatus();
+    }else{log.innerHTML+='❌ '+result.error+'\n';fill.style.width='0%'}
+  }catch(e){log.innerHTML+='❌ 索引失败: '+e.message+'\n';clearInterval(buildPollTimer)}
+  setTimeout(()=>{bar.style.display='none';txt.style.display='none'},3000);
+}
+async function buildKbIncremental(){
+  let log=document.getElementById('kb-build-log');log.style.display='block';log.innerHTML='📥 正在增量索引（跳过已处理文件）...\n';
+  try{
+    let dirResp=await fetch('/api/knowledge/dir');let dirData=await dirResp.json();
+    let stageVal=document.getElementById('kb-stage-sel').value;
+    let apiKey=currentConfig.apiKey||'';let baseUrl=currentConfig.baseUrl||'';
+    let body={dirPath:dirData.directory,stage:stageVal||undefined,apiKey:apiKey,baseUrl:baseUrl};
+    let r=await fetch('/api/knowledge/index/incremental',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    let result=await r.json();
+    if(result.success){
+      log.innerHTML+='✅ 增量完成！新增 '+result.newFiles+' 文件，跳过 '+result.skippedFiles+'\n';
       await refreshKbFileList();await refreshKbStats();await updateKbStatus();
     }else{log.innerHTML+='❌ '+result.error+'\n'}
-  }catch(e){log.innerHTML+='❌ 索引失败: '+e.message+'\n'}
+  }catch(e){log.innerHTML+='❌ '+e.message+'\n'}
+}
+async function loadFailedFiles(){
+  let list=document.getElementById('kb-failed-list');list.style.display='block';
+  try{
+    let r=await fetch('/api/knowledge/failed-files');let d=await r.json();
+    if(!d.files||!d.files.length){list.innerHTML='<div class="empty-hint">✅ 无失败文件</div>';return}
+    list.innerHTML='<b>⚠ 失败文件 ('+d.count+'):</b> '+d.files.map(f=>'<div style="padding:2px 0;border-bottom:1px solid var(--sep)"><span>❌ '+f.fileName+'</span><span style="color:var(--text2);font-size:10px;margin-left:8px">'+f.reason+'</span></div>').join('');
+  }catch(e){list.innerHTML='<div class="empty-hint">加载失败</div>'}
+}
+async function resetKbCheckpoint(){
+  if(!confirm('重置断点后下次索引将全量重建所有PDF。确定继续？'))return;
+  await fetch('/api/knowledge/reset-checkpoint',{method:'POST'});
+  showToast('断点已重置');
 }
 async function clearKb(){
   if(!confirm('确定清空全部知识库索引？此操作不可恢复。'))return;

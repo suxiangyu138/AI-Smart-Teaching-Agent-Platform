@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 public class InMemoryVectorStore {
 
     private static final Path STORE_DIR = Paths.get(
-            System.getProperty("user.home"), ".deepseek-chatbot", "vector_store");
+            System.getProperty("user.dir"), "data", "vector_store");
     private static final ObjectMapper MAPPER = new ObjectMapper()
             .enable(SerializationFeature.INDENT_OUTPUT);
 
