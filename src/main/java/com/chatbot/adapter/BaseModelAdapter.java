@@ -1,0 +1,160 @@
+package com.chatbot.adapter;
+
+import com.chatbot.model.UnifiedChatRequest;
+import com.chatbot.model.UnifiedStreamChunk;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+
+/**
+ * 模型适配器抽象基类 — 子类只需定义厂商特定的请求体转换与端点
+ *
+ * @author suxiangyu
+ */
+public abstract class BaseModelAdapter {
+
+    private static final int HTTP_OK = 200;
+    private static final ThreadPoolExecutor EXECUTOR =
+            new ThreadPoolExecutor(0, 8, 60L, TimeUnit.SECONDS,
+                    new LinkedBlockingQueue<>(),
+                    r -> {
+                        Thread t = new Thread(r, "adapter-stream");
+                        t.setDaemon(true);
+                        return t;
+                    });
+
+    protected static final ObjectMapper MAPPER = new ObjectMapper();
+    protected static final HttpClient HTTP = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(10)).build();
+
+    /**
+     * 返回厂商标识。
+     *
+     * @return deepseek / zhipu / qwen / moonshot / minimax / mimo
+     */
+    public abstract String getProviderCode();
+
+    /**
+     * 将统一请求转为厂商原生 JSON 请求体
+     *
+     * @param req 统一请求
+     * @return 厂商原生 JSON 字符串
+     * @throws Exception 序列化异常
+     */
+    protected abstract String buildNativeBody(
+            UnifiedChatRequest req) throws Exception;
+
+    /**
+     * 流式调用厂商 API，通过回调输出统一 StreamChunk
+     *
+     * @param req        统一请求
+     * @param onChunk    收到片段时回调
+     * @param onError    出错时回调
+     * @param onComplete 完成时回调
+     */
+    public void streamChat(UnifiedChatRequest req,
+                           Consumer<UnifiedStreamChunk> onChunk,
+                           Consumer<Throwable> onError,
+                           Runnable onComplete) {
+        EXECUTOR.submit(() -> {
+            try {
+                String body = buildNativeBody(req);
+                String url = buildUrl(req);
+
+                HttpRequest httpReq = HttpRequest.newBuilder()
+                        .uri(URI.create(url))
+                        .header("Content-Type", "application/json")
+                        .header("Authorization",
+                                "Bearer " + req.getApiKey())
+                        .timeout(Duration.ofSeconds(180))
+                        .POST(HttpRequest.BodyPublishers.ofString(
+                                body, StandardCharsets.UTF_8))
+                        .build();
+
+                HttpResponse<java.io.InputStream> resp =
+                        HTTP.send(httpReq,
+                                HttpResponse.BodyHandlers.ofInputStream());
+
+                if (resp.statusCode() != HTTP_OK) {
+                    byte[] err = resp.body().readAllBytes();
+                    onError.accept(new RuntimeException(
+                            "HTTP " + resp.statusCode() + ": "
+                                    + new String(err, StandardCharsets.UTF_8)));
+                    return;
+                }
+
+                StringBuilder full = new StringBuilder();
+                try (BufferedReader r = new BufferedReader(
+                        new InputStreamReader(resp.body(),
+                                StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = r.readLine()) != null) {
+                        if (line.startsWith("data: ")) {
+                            String d = line.substring(6).trim();
+                            if ("[DONE]".equals(d)) {
+                                break;
+                            }
+                            try {
+                                String content = extractContent(d);
+                                if (content != null
+                                        && !content.isEmpty()) {
+                                    full.append(content);
+                                    onChunk.accept(
+                                            UnifiedStreamChunk.chunk(
+                                                    content,
+                                                    full.toString()));
+                                }
+                            } catch (Exception ignored) {
+                                // 跳过非 JSON 行
+                            }
+                        }
+                    }
+                }
+                onComplete.run();
+            } catch (Exception e) {
+                onError.accept(e);
+            }
+        });
+    }
+
+    private String buildUrl(UnifiedChatRequest req) {
+        if (req.getBaseUrl() != null && !req.getBaseUrl().isBlank()) {
+            return req.getBaseUrl() + "/chat/completions";
+        }
+        return "https://api.deepseek.com/v1/chat/completions";
+    }
+
+    /** 从 SSE data JSON 提取 content 字段（兼容推理模型的 reasoning_content） */
+    protected String extractContent(String data) throws Exception {
+        var n = MAPPER.readTree(data);
+        var choices = n.get("choices");
+        if (choices != null && choices.isArray() && !choices.isEmpty()) {
+            var delta = choices.get(0).get("delta");
+            if (delta != null) {
+                // 优先取 content（最终回答），若为空则取 reasoning_content（推理过程）
+                var c = delta.get("content");
+                if (c != null && !c.isNull()
+                        && !c.asText().isEmpty()) {
+                    return c.asText();
+                }
+                var rc = delta.get("reasoning_content");
+                if (rc != null && !rc.isNull()
+                        && !rc.asText().isEmpty()) {
+                    return rc.asText();
+                }
+            }
+        }
+        return null;
+    }
+}

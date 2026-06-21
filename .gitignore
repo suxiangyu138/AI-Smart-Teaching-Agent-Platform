@@ -1,0 +1,42 @@
+# 构建输出
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+.factorypath
+.nb-gradle/
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# 日志
+*.log
+logs/
+
+# 环境变量 / 密钥
+.env
+.env.local
+*.pem
+*.p12
+
+# 临时文件
+*.tmp
+*.bak
+*.swp
+*~
+\#*\#
+.\#*
+
+# Maven shade plugin 产物
+dependency-reduced-pom.xml
+
+# 本地配置文件（含 API Key 等敏感信息）
+.deepseek-chatbot/
