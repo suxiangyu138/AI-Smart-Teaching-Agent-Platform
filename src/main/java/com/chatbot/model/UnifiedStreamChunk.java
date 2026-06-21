@@ -6,7 +6,7 @@ package com.chatbot.model;
  * @author suxiangyu
  */
 public class UnifiedStreamChunk {
-    /** chunk=文本片段 / done=结束 / error=异常 */
+    /** chunk=文本片段 / finish=结束 / error=异常 */
     private String type;
     /** 本次流式返回文本片段 */
     private String content;
@@ -31,6 +31,10 @@ public class UnifiedStreamChunk {
 
     public static UnifiedStreamChunk done(String full) {
         return new UnifiedStreamChunk("done", "", full);
+    }
+
+    public static UnifiedStreamChunk finish(String full) {
+        return new UnifiedStreamChunk("finish", "", full);
     }
 
     public static UnifiedStreamChunk error(String msg) {

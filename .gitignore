@@ -40,3 +40,13 @@ dependency-reduced-pom.xml
 
 # 本地配置文件（含 API Key 等敏感信息）
 .deepseek-chatbot/
+
+# RAG 向量库持久化文件
+vector_store/
+
+# 知识库PDF源文件
+math-library/
+knowledge_base/
+
+# 数学资料知识库
+数学资料知识库/
