@@ -45,6 +45,11 @@ data/
 .playwright-mcp/
 *.png
 
+# Python 虚拟环境
+ocr_env/
+__pycache__/
+*.pyc
+
 # RAG 断点/失败清单文件（自动生成，不提交）
 processed_files.json
 failed_files.json
