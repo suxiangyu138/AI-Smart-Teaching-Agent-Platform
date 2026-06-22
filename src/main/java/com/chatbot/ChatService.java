@@ -2,6 +2,7 @@ package com.chatbot;
 
 import com.chatbot.adapter.BaseModelAdapter;
 import com.chatbot.adapter.ModelAdapterFactory;
+import com.chatbot.history.ChatHistoryService;
 import com.chatbot.model.UnifiedChatRequest;
 import com.chatbot.model.UnifiedStreamChunk;
 import com.chatbot.rag.RagService;
@@ -22,24 +23,32 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author suxiangyu
  */
 @Service
-@SuppressWarnings("null")
 public class ChatService {
 
     private final ModelAdapterFactory adapterFactory;
     private final RagService ragService;
+    private final ChatHistoryService historyService;
     private final ObjectMapper mapper = new ObjectMapper();
     private final Map<String, List<ChatMessage>> sessions = new ConcurrentHashMap<>();
     private static final int MAX_HISTORY = 20;
 
-    public ChatService(ModelAdapterFactory adapterFactory, RagService ragService) {
+    public ChatService(ModelAdapterFactory adapterFactory, RagService ragService,
+                       ChatHistoryService historyService) {
         this.adapterFactory = adapterFactory;
         this.ragService = ragService;
+        this.historyService = historyService;
     }
 
-    /** 并发流式聊天 */
+    /** 并发流式聊天（兼容旧 cookie 模式） */
     public SseEmitter chat(String sessionId, UnifiedChatRequest req) {
-        List<ChatMessage> hist = getSession(sessionId);
-        hist.add(new ChatMessage(ChatMessage.Role.USER, lastUserContent(req)));
+        return chat(sessionId, null, req);
+    }
+
+    /** 并发流式聊天 + 数据库持久化 */
+    public SseEmitter chat(String memSessionId, Long dbSessionId, UnifiedChatRequest req) {
+        List<ChatMessage> hist = getSession(memSessionId);
+        String userContent = lastUserContent(req);
+        hist.add(new ChatMessage(ChatMessage.Role.USER, userContent));
 
         req.setMessages(buildMessages(req, hist));
 
@@ -48,13 +57,58 @@ public class ChatService {
 
         SseEmitter em = new SseEmitter(180_000L);
         StringBuilder buf = new StringBuilder();
+        StringBuilder thinkBuf = new StringBuilder();
+
+        // 持久化用户消息
+        final Long finalDbId = dbSessionId;
+        if (finalDbId != null) {
+            historyService.saveMessage(finalDbId, "user", userContent);
+            historyService.updateSessionMeta(finalDbId,
+                    req.getStage(), req.getModelName());
+        }
 
         adapter.streamChat(req,
-                chunk -> onChunk(em, chunk, buf),
+                chunk -> onChunk(em, chunk, buf, thinkBuf),
                 err -> onError(em, err),
-                () -> onComplete(em, hist, buf));
+                () -> onComplete(em, hist, buf, thinkBuf, finalDbId));
 
         return em;
+    }
+
+    private void onChunk(SseEmitter em, UnifiedStreamChunk chunk,
+                         StringBuilder buf, StringBuilder thinkBuf) {
+        if (UnifiedStreamChunk.TYPE_REASONING.equals(chunk.getType())) {
+            thinkBuf.append(chunk.getReasoning() != null ? chunk.getReasoning() : "");
+        } else {
+            buf.append(chunk.getContent() != null ? chunk.getContent() : "");
+        }
+        try {
+            em.send(sseEvent(chunk.getType(), mapper.writeValueAsString(chunk)));
+        } catch (IOException e) {
+            em.completeWithError(e);
+        }
+    }
+
+    private void onComplete(SseEmitter em, List<ChatMessage> hist,
+                            StringBuilder buf, StringBuilder thinkBuf,
+                            Long dbSessionId) {
+        String aiContent = buf.toString();
+        String thinkContent = thinkBuf.toString();
+        hist.add(new ChatMessage(ChatMessage.Role.ASSISTANT, aiContent));
+        trimHistory(hist);
+
+        // 持久化AI回复 + 思考过程
+        if (dbSessionId != null && !aiContent.isEmpty()) {
+            historyService.saveMessage(dbSessionId, "assistant", aiContent, thinkContent);
+        }
+
+        try {
+            em.send(sseEvent("finish", mapper.writeValueAsString(
+                    UnifiedStreamChunk.finish(aiContent, thinkContent))));
+            em.complete();
+        } catch (IOException e) {
+            em.completeWithError(e);
+        }
     }
 
     /** 构建系统提示词（含四层学段适配 + 大学拓展 + RAG 增强） */
@@ -108,10 +162,21 @@ public class ChatService {
             sb.append("输出时请分层：先给课内标准答案，再附拓展内容。\n");
         }
 
-        sb.append("【LaTeX公式规则 - 必须区分行内/块级】");
-        sb.append("行内公式（句子中的数字、符号、短方程）用单个 $ 包裹，如 $x^2$、$f'(x)$、$-10$，必须和文字同行！");
-        sb.append("块级公式（独立展示的大公式、多行推导）才用 $$...$$ 居中。");
-        sb.append("禁止裸写任何数学符号，禁止将行内公式换行拆分。\n");
+        sb.append("【LaTeX数学公式强制规范 - 必须严格遵循】\n");
+        sb.append("1. 行内公式只用 $...$：如 $a_1$、$x^2$、$S_n$，与文字同行不分段。\n");
+        sb.append("2. 块级公式只用 $$...$$：\n");
+        sb.append("   $$ 单独占一行，公式写在同一行内，$$ 单独占一行。\n");
+        sb.append("   正确格式：\n");
+        sb.append("   $$\n");
+        sb.append("   a_n = a_1 + (n-1)d\n");
+        sb.append("   $$\n");
+        sb.append("3. 分式必须用 \\frac{分子}{分母} 完整一行写完，绝不允许把分子分母拆成多行！\n");
+        sb.append("   正确：$$S_n = \\frac{n(a_1 + a_n)}{2}$$\n");
+        sb.append("   错误：$$S_n = \\frac{n(a_1 + a_n)}{2}$$（分子分母分行写会坏掉）\n");
+        sb.append("4. 下标用单下划线 a_1、a_n、x_0，禁止用空格分隔写成 a 1 或 a n。\n");
+        sb.append("5. 禁止使用 \\[ \\] 或 \\( \\) 作为公式分隔符，只用 $$ 和 $。\n");
+        sb.append("6. 公式内部禁止换行，禁止插入零宽字符、全角空格。\n");
+        sb.append("7. 求和符号 \\sum、积分 \\int、极限 \\lim 等必须写在块级公式 $$ 内。\n");
 
         return sb.toString();
     }
@@ -141,15 +206,6 @@ public class ChatService {
         return SseEmitter.event().name(name).data(data);
     }
 
-    private void onChunk(SseEmitter em, UnifiedStreamChunk chunk, StringBuilder buf) {
-        buf.append(chunk.getContent() != null ? chunk.getContent() : "");
-        try {
-            em.send(sseEvent("chunk", mapper.writeValueAsString(chunk)));
-        } catch (IOException e) {
-            em.completeWithError(e);
-        }
-    }
-
     private void onError(SseEmitter em, Throwable err) {
         try {
             em.send(sseEvent("error", mapper.writeValueAsString(
@@ -157,18 +213,6 @@ public class ChatService {
             em.complete();
         } catch (IOException ex) {
             em.completeWithError(ex);
-        }
-    }
-
-    private void onComplete(SseEmitter em, List<ChatMessage> hist, StringBuilder buf) {
-        hist.add(new ChatMessage(ChatMessage.Role.ASSISTANT, buf.toString()));
-        trimHistory(hist);
-        try {
-            em.send(sseEvent("finish", mapper.writeValueAsString(
-                    UnifiedStreamChunk.finish(buf.toString()))));
-            em.complete();
-        } catch (IOException e) {
-            em.completeWithError(e);
         }
     }
 

@@ -2,9 +2,13 @@ package com.chatbot.rag.document;
 
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.stereotype.Component;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,7 +29,7 @@ import java.util.stream.Stream;
 @Component
 public class PdfDocumentParser {
 
-    private static final int MAX_PDF_SIZE_MB = 200;
+    private static final int MAX_PDF_SIZE_MB = 500;
     private static final int BYTES_PER_MB = 1024 * 1024;
     /** 页眉页脚阈值：距离页面顶部/底部 < 此比例 → 视为页眉页脚 */
     private static final float HEADER_FOOTER_RATIO = 0.08f;
@@ -33,6 +37,16 @@ public class PdfDocumentParser {
     private static final int SCAN_DETECT_PAGES = 3;
     /** 扫描版单页最小文本量 */
     private static final int SCAN_MIN_CHARS_PER_PAGE = 20;
+    /** OCR 每批最大页数（防超时） */
+    private static final int OCR_MAX_PAGES = 50;
+
+    private final ScanOcrClient ocrClient;
+    private final MathPixClient mathPixClient;
+
+    public PdfDocumentParser(ScanOcrClient ocrClient, MathPixClient mathPixClient) {
+        this.ocrClient = ocrClient;
+        this.mathPixClient = mathPixClient;
+    }
 
     /**
      * 解析 PDF，提取结构化分页内容
@@ -62,7 +76,11 @@ public class PdfDocumentParser {
             result.isScanned = detectIfScanned(document, pageCount);
 
             if (result.isScanned) {
-                result.errorMsg = "扫描图片版 PDF，需 OCR 识别";
+                // 优先级: MathPix > PaddleOCR
+                if (mathPixClient.isAvailable() || ocrClient.isAvailable()) {
+                    return parseScannedPdf(pdfPath, document, pageCount, fileName);
+                }
+                result.errorMsg = "扫描图片版 PDF，MathPix 未配置且 OCR 服务未启动";
                 return result;
             }
 
@@ -106,12 +124,27 @@ public class PdfDocumentParser {
         if (result.isEncrypted) {
             throw new IOException("PDF 已加密: " + result.fileName);
         }
-        if (result.isScanned) {
-            throw new IOException("扫描图片版 PDF，需 OCR 识别: " + result.fileName);
+        if (result.isScanned && !result.ocrProcessed) {
+            throw new IOException("扫描图片版 PDF，OCR 服务未启动: " + result.fileName);
         }
         if (result.pages.isEmpty()) {
-            throw new IOException("PDF 无可提取文本: " + result.fileName);
+            // 文本提取为空但没被识别为扫描版 → 强制走OCR重试（如只有少量页码文字的扫描PDF）
+            if (mathPixClient.isAvailable() || ocrClient.isAvailable()) {
+                try (PDDocument doc = Loader.loadPDF(pdfPath.toFile())) {
+                    result = parseScannedPdf(pdfPath, doc, doc.getNumberOfPages(), pdfPath.getFileName().toString());
+                    if (!result.pages.isEmpty()) {
+                        return buildFullText(result);
+                    }
+                } catch (Exception e) {
+                    throw new IOException("PDF OCR 失败: " + result.fileName + " - " + e.getMessage());
+                }
+            }
+            throw new IOException("PDF 无可提取文本且无可用OCR: " + result.fileName);
         }
+        return buildFullText(result);
+    }
+
+    private String buildFullText(PdfParseResult result) {
         StringBuilder sb = new StringBuilder();
         for (PdfPageInfo p : result.pages) {
             sb.append(p.content).append("\n\n");
@@ -224,6 +257,60 @@ public class PdfDocumentParser {
         return result;
     }
 
+    /**
+     * OCR 处理扫描版 PDF：逐页渲染为图片 → 调用 OCR 服务 → 拼接文本
+     */
+    private PdfParseResult parseScannedPdf(Path pdfPath, PDDocument document,
+                                            int pageCount, String fileName) throws IOException {
+        PdfParseResult result = new PdfParseResult();
+        result.fileName = fileName;
+        result.totalPages = pageCount;
+        result.pages = new ArrayList<>();
+        result.isScanned = true;
+        result.ocrProcessed = true;
+
+        PDFRenderer renderer = new PDFRenderer(document);
+        int processPages = Math.min(pageCount, OCR_MAX_PAGES);
+
+        for (int pageIdx = 0; pageIdx < processPages; pageIdx++) {
+            try {
+                // 渲染页面为图片
+                BufferedImage image = renderer.renderImageWithDPI(pageIdx, 200);
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ImageIO.write(image, "png", baos);
+                byte[] imgBytes = baos.toByteArray();
+                baos.close();
+
+                // 调用 OCR: MathPix 优先（数学公式强），回退 PaddleOCR
+                String pageText;
+                if (mathPixClient.isAvailable()) {
+                    pageText = mathPixClient.recognizePage(imgBytes);
+                } else if (ocrClient.isAvailable()) {
+                    pageText = ocrClient.recognizePage(imgBytes);
+                } else {
+                    continue;
+                }
+                if (pageText != null && !pageText.isBlank()) {
+                    pageText = cleanPageText(pageText, pageIdx, pageCount);
+                    if (pageText.length() >= SCAN_MIN_CHARS_PER_PAGE) {
+                        PdfPageInfo page = new PdfPageInfo();
+                        page.pageNum = pageIdx + 1;
+                        page.content = pageText;
+                        result.pages.add(page);
+                    }
+                }
+                // 释放图片内存
+                image.flush();
+            } catch (IOException | InterruptedException e) {
+                System.err.println("[OCR] 第 " + (pageIdx + 1) + " 页识别失败: " + e.getMessage());
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+        return result;
+    }
+
     /** 获取 PDF 页数 */
     public int getPageCount(Path pdfPath) throws IOException {
         try (PDDocument document = Loader.loadPDF(pdfPath.toFile())) {
@@ -240,6 +327,7 @@ public class PdfDocumentParser {
         public List<PdfPageInfo> pages = new ArrayList<>();
         public boolean isScanned;
         public boolean isEncrypted;
+        public boolean ocrProcessed;
         public String errorMsg;
     }
 

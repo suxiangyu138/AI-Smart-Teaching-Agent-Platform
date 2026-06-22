@@ -3,14 +3,14 @@
   <img src="https://img.shields.io/badge/Spring_Boot-3.5.15-6DB33F?logo=springboot&logoColor=white" alt="Spring Boot 3.5.15"/>
   <img src="https://img.shields.io/badge/Maven-3.9-C71A36?logo=apachemaven&logoColor=white" alt="Maven"/>
   <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License MIT"/>
-  <img src="https://img.shields.io/badge/RAG-PDFBox-green?logo=apache&logoColor=white" alt="RAG"/>
+  <img src="https://img.shields.io/badge/DB-H2-blue?logo=h2&logoColor=white" alt="H2"/>
   <img src="https://img.shields.io/badge/Math-KaTeX-5f5f5f?logo=katex&logoColor=white" alt="KaTeX"/>
 </p>
 
-<h1 align="center">📐 MathRAG Tutor</h1>
+<h1 align="center">🎓 苏巷雨 · 智慧教学智能体</h1>
 
-<p align="center"><strong>企业级 K12+大学 数学 RAG 智能辅导多模型平台</strong></p>
-<p align="center">聚合 6 家大模型 · 四层学段适配 · PDF 知识库检索增强 · LaTeX 公式渲染 · 流式 SSE</p>
+<p align="center"><strong>K12+大学 数学 RAG 智能辅导平台 — 多模型聚合 · 深空玻璃拟态 · 对话历史 · 思考可视化</strong></p>
+<p align="center">6 家大模型 · 四层学段适配 · PDF 知识库 · LaTeX 渲染 · 流式平滑输出 · 思考过程折叠</p>
 
 ---
 
@@ -19,6 +19,8 @@
 - [核心特性](#核心特性)
 - [学段体系](#学段体系)
 - [RAG 知识库](#rag-知识库)
+- [对话历史系统](#对话历史系统)
+- [思考过程可视化](#思考过程可视化)
 - [支持厂商与模型](#支持厂商与模型)
 - [架构设计](#架构设计)
 - [快速开始](#快速开始)
@@ -33,16 +35,19 @@
 ## 核心特性
 
 | 特性 | 说明 |
-|---|---|
+|------|------|
+| 🎨 深空玻璃拟态 UI | 渐变星空背景 · 毛玻璃卡片 · 粒子动效 · 鼠标跟随柔光 · 流光边框 |
 | 🎓 四层学段 | 小学→初中→高中→大学拓展，精准难度匹配 |
-| 📚 RAG 知识库 | PDF 教材/题库 → 数学分块 → 向量检索 → 上下文增强 |
-| 🔍 双模式检索 | 云端 Embedding API + 本地关键词降级检索 |
-| 🤖 多厂商聚合 | DeepSeek / Kimi / Qwen / GLM / MiniMax / MiMo 一键切换 |
-| ⚡ 流式 SSE | 实时打字机效果，event:chunk / event:finish |
-| 📐 公式渲染 | KaTeX 渲染 $$LaTeX$$ + 公式快捷插入栏 |
-| 📝 错题本 | 本地 localStorage 持久化，按学段分类 |
-| 🎨 数学主题 UI | 蓝白学习风 · 侧边栏工具面板 · 深色模式 |
-| 🔐 API Key 本地存储 | 浏览器 localStorage，不上传服务端 |
+| 💬 对话历史 | H2 持久化 · 会话列表 · 一键切换 · 自动标题 · 软删除 |
+| 🧠 思考可视化 | 推理过程自动隐藏 · 点击展开/折叠 · 状态持久化 |
+| ⚡ 流式平滑输出 | 缓冲队列 + 匀速打字机 · 智能加速 · 不再蹦字 |
+| 📚 RAG 知识库 | PDF→数学分块→向量检索→上下文增强 |
+| 🤖 多厂商聚合 | DeepSeek / Kimi / Qwen / GLM / MiniMax / MiMo |
+| 📐 公式渲染 | KaTeX + amsmath · trust 模式 · 裸 LaTeX 自动包裹 · 破碎公式修复 |
+| 🌐 网页爬虫 | BFS 爬虫 + Playwright 渲染 + FormulaNormalizer 公式标准化 |
+| 📷 OCR 识别 | PaddleOCR + Pix2Tex + MathPix 三通道 · 扫描版 PDF 支持 |
+| 📝 错题本 | LocalStorage 持久化 · 按学段分类 |
+| 🔐 API Key 本地 | 浏览器 localStorage，不上传服务端 |
 | 🛡 限流保护 | 30 次/分钟/IP |
 
 ---
@@ -56,52 +61,75 @@
 | 🎓 高中 | `senior` | 导数、圆锥曲线、数列、立体几何、排列组合 | 0.2 |
 | 📚 大学拓展 | `university` | 微积分进阶、线性代数、离散数学、竞赛 | 0.3 |
 
-### 学段控制规则
-- **默认屏蔽超纲**：低学段不输出高学段内容
-- **高中专属拓展开关**：开启后 AI 分层输出"课内标准解法 + 大学拓展推导"
-- **动态 Prompt**：每个学段独立角色约束、语言风格、公式规范
-- **RAG 检索过滤**：只检索 ≤ 当前学段的知识库，大学文档需拓展开关
+- 低学段屏蔽超纲内容 · 高中专属拓展开关 · 动态 Prompt · RAG 学段过滤
 
 ---
 
 ## RAG 知识库
 
-### 检索增强生成流程
-
 ```
 用户提问 → 学段/题型识别 → 向量库检索 Top-K → 学段过滤 + 权重排序
-         → 拼接上下文 → LLM 推理 → 流式返回 + 知识库溯源引用
+         → 拼接上下文 → LLM 推理 → 流式返回 + 知识库溯源
 ```
-
-### 技术栈
 
 | 组件 | 技术 |
 |------|------|
-| PDF 解析 | Apache PDFBox 3.0.4 |
-| 数学分块 | 自研 MathChunkingStrategy（公式保护 + 章节切分 + 题型识别） |
-| 向量嵌入 | 双模式：云端 Embedding API / 本地 n-gram 降级 |
-| 向量存储 | 自研 InMemoryVectorStore（余弦相似度 + JSON 持久化） |
-| 检索过滤 | 学段层级过滤 + 大学权重 0.6 + 课内权重 1.0 |
+| PDF 解析 | Apache PDFBox 3.0.4 + 扫描版 OCR |
+| 数学分块 | 自研 MathChunkingStrategy（公式保护 + 章节切分 + 题型/公式元数据） |
+| 向量嵌入 | 双模式：云端 Embedding API / 本地 n-gram TF-IDF 降级 |
+| 向量存储 | 自研 InMemoryVectorStore（余弦相似度 + 多路召回 + JSON 持久化） |
+| 公式标准化 | FormulaNormalizer：网页 MathJax/`\(`/`\[` → `$$`/`$`；裸 LaTeX 自动包裹 |
+| OCR | PaddleOCR（中文）+ Pix2Tex（公式）+ MathPix（云端优先） |
 
-### 知识库目录结构
+知识库目录结构：
 
 ```
 math-library/
-├── primary/          # 小学知识库
-├── junior/           # 初中知识库
-├── senior/           # 高中知识库
-└── university/       # 大学拓展知识库（隔离）
+├── primary/    ├── junior/    ├── senior/    └── university/
 ```
 
-将对应学段的 PDF 教材放入目录，点击前端「批量索引」自动识别学段并构建向量库。
+---
+
+## 对话历史系统
+
+### 数据持久化
+
+- **H2 嵌入式数据库**：零配置，文件存储在 `data/chatbot-db`
+- **会话表** (`chat_session`)：标题、学段、模型、时间戳、软删除
+- **消息表** (`chat_message`)：角色、完整文本、思考内容 (`think_raw`)
+- 标题自动取首条用户消息前 18 字
+
+### 交互
+
+- 侧边栏「📜 历史对话」显示最近 50 条会话
+- 新建对话自动创建数据库记录
+- 点击历史会话加载全部消息（含思考过程）
+- hover 显示删除按钮，确认后逻辑删除
+- 刷新页面自动恢复上次会话 (LocalStorage)
+
+---
+
+## 思考过程可视化
+
+推理模型（DeepSeek-R1 / Kimi K2.6 等）输出分为两层：
+
+| 层 | 展示方式 | 内容 |
+|----|---------|------|
+| 思考草稿 | 默认折叠，虚线弱化样式 | 内部推理、试算、多思路 |
+| 正式答案 | 正常展示，高亮清晰 | 标准 LaTeX 解题过程 |
+
+- `reasoning_content` → 隐藏面板，点「📝 查看AI推理过程」展开
+- `content` → 正文区域，匀速平滑输出
+- 展开状态记忆 (LocalStorage) · 首次展开时懒渲染公式
+- 数据库 `think_raw` 字段单独存储
 
 ---
 
 ## 支持厂商与模型
 
-| 厂商 | Provider Code | 推荐模型 | 推理优选 |
-|------|-------------|---------|---------|
-| 深度求索 DeepSeek | `deepseek` | deepseek-v4-pro, deepseek-r1, deepseek-v3.2 | ⭐ R1 |
+| 厂商 | Provider | 推荐模型 | 推理 |
+|------|----------|---------|------|
+| 深度求索 | `deepseek` | deepseek-v4-pro, deepseek-r1, deepseek-v3.2 | ⭐ R1 |
 | Moonshot Kimi | `moonshot` | kimi-k2.6, kimi-k2.5, moonshot-v1-128k | ⭐ K2.6 |
 | 阿里通义千问 | `qwen` | qwen3.7-max, qwen-max, qwen-plus | ⭐ Max |
 | 智谱AI GLM | `zhipu` | glm-5.2, glm-5-turbo, glm-4.7-flash | ⭐ 5.2 |
@@ -112,32 +140,23 @@ math-library/
 
 ## 架构设计
 
-### 四层架构
-
 ```
-【前端应用层】index.html
-    聊天界面 / 模型切换 / 学段选择 / 知识库管理 / 错题本 / 公式速查
+【前端】index.html — 深空玻璃拟态 · SSE 流式 · KaTeX 渲染 · 思考面板 · 历史列表
 
-【控制层】ChatController + KnowledgeBaseController + ConfigController
-    统一异常处理 / SSE 流式推送 / RAG 知识库 API
+【控制层】ChatController / KnowledgeBaseController / CrawlerController
+    SSE 流式 + reasoning 事件 · RAG API · 爬虫 API · 历史 CRUD
 
-【业务层】ChatService + RagService + MathChunkingStrategy + EmbeddingService
-    多模型适配器工厂 / 数学 Prompt 引擎 / RAG 检索 / 文档解析分块
+【业务层】ChatService / RagService / ChatHistoryService
+    多模型适配器 · 数学 Prompt 引擎 · RAG 检索 · 历史持久化 · 公式标准化
 
-【数据层】InMemoryVectorStore + LocalStorage + ConfigManager
-    向量库持久化 / 前端缓存 / 配置管理
+【数据层】H2 (JPA) + InMemoryVectorStore + InMemory Sessions + LocalStorage
 ```
 
-### 适配器模式（6 厂商）
-
 ```
-BaseModelAdapter (streamChat, extractContent)
-├── DeepSeekAdapter     — buildOpenAiBody() 静态方法共享
-├── MoonshotKimiAdapter — 自定义 buildNativeBody（温度兼容）
-├── QwenAdapter         — 委托 buildOpenAiBody()
-├── ZhipuGlmAdapter     — 委托 buildOpenAiBody()
-├── MiniMaxAdapter      — 委托 buildOpenAiBody()
-└── MiMoAdapter         — 委托 buildOpenAiBody()
+BaseModelAdapter (streamChat, extractContent, extractReasoning)
+├── DeepSeekAdapter     — buildOpenAiBody() 共享
+├── MoonshotKimiAdapter — 温度兼容
+├── QwenAdapter / ZhipuGlmAdapter / MiniMaxAdapter / MiMoAdapter
 ```
 
 ---
@@ -146,121 +165,67 @@ BaseModelAdapter (streamChat, extractContent)
 
 ### 环境要求
 
-- **JDK 25+**
-- **Maven 3.9+**
+- **JDK 25+** · **Maven 3.9+**
 
 ```bash
-# 克隆项目
 git clone https://github.com/suxiangyu138/LlmChatBot_sxy.git
 cd LlmChatBot_sxy
-
-# 编译
 mvn clean compile
-
-# 启动（默认端口 8080）
 mvn spring-boot:run
 ```
 
-浏览器访问 **http://localhost:8080**。
+浏览器访问 **http://localhost:8080**。Windows 用户双击 `启动聊天机器人.bat`。
 
 ### 基本使用
 
 1. 选择厂商与模型 → 点击 **API Key** 填入密钥
-2. 侧边栏选择学段（小学/初中/高中）
+2. 侧边栏选择学段
 3. 输入数学题目，回车发送
-4. AI 按分层结构输出：知识点定位 → 解题步骤 → 答案 → 易错点 → 变式题
-
----
-
-## 知识库使用指南
-
-### 第一步：准备 PDF 资料
-
-将数学教材/题库 PDF 放入对应学段目录：
-
-```bash
-# macOS / Linux
-mkdir -p ~/.deepseek-chatbot/math-library/{primary,junior,senior,university}
-cp 小学教材.pdf ~/.deepseek-chatbot/math-library/primary/
-
-# Windows
-mkdir %USERPROFILE%\.deepseek-chatbot\math-library\junior
-copy 初中题库.pdf %USERPROFILE%\.deepseek-chatbot\math-library\junior\
-```
-
-### 第二步：构建知识库
-
-1. 打开前端 → 侧边栏「📂 管理知识库」
-2. 刷新文件列表确认 PDF 已就绪
-3. 选择目标学段 → 点击「🚀 批量索引全部 PDF」
-4. 等待索引完成（日志面板显示每个文件的分块数）
-
-### 第三步：启用 RAG
-
-1. 侧边栏打开「RAG 增强」开关
-2. 提问时自动检索知识库，拼接教材原文增强回答
-3. 高中模式可额外开启「🔓 大学拓展」
+4. AI 流式输出答案 · 推理过程在「📝 查看AI推理过程」中
 
 ---
 
 ## API 参考
 
-### 聊天接口
+### 聊天
 
 ```
-POST /api/chat
-Content-Type: application/json
-Accept: text/event-stream
+POST /api/chat          SSE 流式聊天（event:chunk / event:reasoning / event:finish）
+GET  /api/history       获取内存会话历史
+DELETE /api/chat        清空内存会话
+GET  /api/session       创建内存会话
+GET  /api/providers      厂商与模型列表
 ```
 
-请求体：
-```json
-{
-  "provider": "deepseek",
-  "modelName": "deepseek-r1",
-  "apiKey": "sk-xxx",
-  "baseUrl": "https://api.deepseek.com/v1",
-  "stage": "senior",
-  "allowUniversityExtend": false,
-  "ragEnabled": true,
-  "ragTopK": 4,
-  "messages": [{"role": "user", "content": "求 f(x)=x³-3x 的极值"}]
-}
+### 对话历史
+
+```
+POST   /api/history/session/create          创建数据库会话
+GET    /api/history/sessions?page=0&size=50 会话列表
+DELETE /api/history/session/{id}            逻辑删除
+PUT    /api/history/session/rename          重命名
+GET    /api/history/messages/{id}           查询全部消息（含 thinkRaw）
 ```
 
-SSE 响应：
+### 知识库
+
 ```
-event:chunk
-data:{"type":"chunk","content":"首先求导","fullContent":"首先求导"}
-
-event:chunk
-data:{"type":"chunk","content":"...","fullContent":"首先求导..."}
-
-event:finish
-data:{"type":"finish","content":"","fullContent":"首先求导 f'(x)=3x²-3..."}
+GET    /api/knowledge/stats               统计
+POST   /api/knowledge/index/pdf           索引单个 PDF
+POST   /api/knowledge/index/directory     批量索引
+POST   /api/knowledge/restandardize       公式批量标准化
+GET    /api/knowledge/formula-stats       公式统计
+DELETE /api/knowledge/clear               清空
 ```
 
-### 知识库接口
+### 爬虫
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| `GET` | `/api/knowledge/stats` | 知识库统计（文档数/切片数/磁盘占用） |
-| `GET` | `/api/knowledge/dir` | 获取知识库目录路径 |
-| `GET` | `/api/knowledge/pdf-list` | 列出知识库目录下 PDF 文件 |
-| `POST` | `/api/knowledge/index/pdf` | 索引单个 PDF |
-| `POST` | `/api/knowledge/index/directory` | 批量索引目录下所有 PDF |
-| `DELETE` | `/api/knowledge/document` | 删除指定文档索引 |
-| `DELETE` | `/api/knowledge/clear` | 清空全部知识库 |
-
-### 其他接口
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| `GET` | `/api/providers` | 厂商与模型列表 |
-| `GET` | `/api/session` | 创建会话，返回 `sid` |
-| `GET` | `/api/history` | 获取会话历史 |
-| `DELETE` | `/api/chat` | 清空会话 |
-| `GET/POST` | `/api/config` | 获取/更新服务端配置 |
+```
+POST /api/crawler/start                  BFS 爬虫
+GET  /api/crawler/progress               进度
+POST /api/crawler/quick                  单 URL 快速爬取
+POST /api/crawler/playwright-index       Playwright 渲染索引
+```
 
 ---
 
@@ -268,130 +233,56 @@ data:{"type":"finish","content":"","fullContent":"首先求导 f'(x)=3x²-3..."}
 
 ```
 src/main/java/com/chatbot/
-├── Main.java                      # Spring Boot 入口
-├── WebConfig.java                 # CORS 配置
-├── RateLimitFilter.java           # IP 限流（30次/分钟）
-├── ConfigManager.java             # 配置管理 (~/.deepseek-chatbot/)
-├── ConfigController.java          # 配置 API
-├── ChatController.java            # 聊天 API + 厂商列表
-├── ChatService.java               # 会话管理 + SSE + 动态 Prompt
-├── ChatMessage.java               # 消息模型
-├── DeepSeekClient.java            # [遗留] 独立 DeepSeek 客户端
-├── adapter/                       # 多厂商适配器
-│   ├── BaseModelAdapter.java      # 适配器基类
-│   ├── ModelAdapterFactory.java   # Spring DI 自动路由
-│   ├── DeepSeekAdapter.java       # DeepSeek + 共享 body builder
-│   ├── MoonshotKimiAdapter.java   # Kimi（温度兼容）
-│   ├── QwenAdapter.java
-│   ├── ZhipuGlmAdapter.java
-│   ├── MiniMaxAdapter.java
-│   └── MiMoAdapter.java
-├── model/
-│   ├── UnifiedChatRequest.java    # 统一请求体（四层学段常量）
-│   ├── UnifiedStreamChunk.java    # 统一 SSE 数据块
-│   └── ModelProviderConfig.java   # [遗留] 厂商配置模型
-└── rag/                           # ★ RAG 知识库模块
-    ├── RagService.java            # RAG 核心编排
-    ├── KnowledgeBaseController.java # 知识库 REST API
-    ├── model/
-    │   ├── DocumentChunk.java     # 文档切片模型
-    │   ├── VectorDocument.java    # 向量化文档
-    │   ├── SearchResult.java      # 检索结果
-    │   └── KnowledgeBaseStats.java # 知识库统计
-    ├── document/
-    │   ├── PdfDocumentParser.java # PDF 解析（PDFBox）
-    │   └── MathChunkingStrategy.java # 数学专用分块策略
-    ├── embedding/
-    │   └── EmbeddingService.java  # 向量嵌入（云端+本地双模式）
-    └── vector/
-        └── InMemoryVectorStore.java # 向量存储 + 分层检索
-src/main/resources/
-├── application.properties
-└── static/
-    └── index.html                 # 单页前端 (680+ 行)
+├── Main.java / WebConfig.java / RateLimitFilter.java
+├── ConfigManager.java / ConfigController.java
+├── ChatController.java / ChatService.java / ChatMessage.java
+├── adapter/            # 6 厂商适配器
+├── model/              # UnifiedChatRequest, UnifiedStreamChunk
+├── history/            # ★ 对话历史持久化
+│   ├── ChatSessionEntity.java / ChatMessageEntity.java
+│   ├── ChatSessionRepository.java / ChatMessageRepository.java
+│   └── ChatHistoryService.java
+└── rag/                # ★ RAG 知识库
+    ├── RagService.java / KnowledgeBaseController.java
+    ├── model/          # DocumentChunk, VectorDocument, SearchResult
+    ├── document/       # PdfDocumentParser, MathChunkingStrategy, MathPixClient, ScanOcrClient
+    ├── embedding/      # EmbeddingService
+    ├── vector/         # InMemoryVectorStore
+    └── crawler/        # WebCrawlerService, PlaywrightClient, FormulaNormalizer, CrawlRequest
 ```
-
----
-
-## 开发指南
-
-```bash
-# 增量编译
-mvn compile
-
-# 全量重编译
-mvn clean compile
-
-# 启动
-mvn spring-boot:run
-
-# 调试 SSE 流
-curl -N -X POST http://localhost:8080/api/chat \
-  -H "Content-Type: application/json" \
-  -d '{"provider":"moonshot","modelName":"kimi-k2.6","apiKey":"sk-xxx","baseUrl":"https://api.moonshot.cn/v1","messages":[{"role":"user","content":"求 x²+3x-10=0 的解"}]}'
-```
-
-### 添加新厂商
-
-```java
-@Component
-public class NewAdapter extends BaseModelAdapter {
-    @Override public String getProviderCode() { return "newprovider"; }
-    @Override protected String buildNativeBody(UnifiedChatRequest req) throws Exception {
-        return DeepSeekAdapter.buildOpenAiBody(req, "https://api.example.com/v1");
-    }
-}
-```
-
-然后在 `ChatController.providers()` 中添加厂商信息即可。
-
-### 注意事项
-
-- **不提交 API Key**：`.gitignore` 已排除 `.deepseek-chatbot/`、`vector_store/`、`knowledge_base/`
-- **运行时不可 `mvn clean`**：jar 文件被进程锁定
-- **Kimi k2.x 温度限制**：`MoonshotKimiAdapter` 自动省略 temperature 字段
-- **RAG 本地模式**：无 API Key 时自动降级为关键词搜索，可离线使用
 
 ---
 
 ## 更新日志
 
-### v2.0.0 — K12+大学 RAG 智能体 (2026-06-22)
+### v3.0.0 — 深空智能体 · 历史系统 · 思考可视化 (2026-06-22)
 
 **新增**
-- 🎓 四层学段体系：小学/初中/高中/大学拓展
-- 📚 RAG 知识库：PDF 解析 → 数学分块 → 向量检索 → 上下文增强
-- 🔍 双模式向量嵌入：云端 Embedding API + 本地 n-gram 降级
-- 📂 知识库管理 API：索引/统计/清除/文件列表
-- 🏫 学段目录自动识别（primary/junior/senior/university）
-- 🔓 高中专属大学拓展开关
-- 📊 分层向量检索（课内权重 1.0 / 大学权重 0.6）
-- 🌡 学段温度映射（小学 0.1 → 高中 0.2 → 拓展 0.3）
-- 📐 小学知识点目录 + 公式速查
-- 🔄 动态快捷按钮（按学段切换文案）
-- 📝 错题本按学段分类存储
+- 🎨 深空玻璃拟态 UI：渐变星空背景、毛玻璃卡片、粒子动效、鼠标柔光、流光边框
+- 💬 对话历史系统：H2 持久化、会话列表、切换/删除/自动标题
+- 🧠 思考过程可视化：reasoning_content 分离存储、折叠面板、展开状态记忆
+- ⚡ 流式平滑打字机：缓冲队列 + 25ms 匀速输出 + 智能加速
+- 📐 LaTeX 渲染全面修复：trust/strict 模式、`\[`/`\(` 兼容、裸公式自动包裹、破碎公式修复
+- 🔧 公式标准化管道：FormulaNormalizer + 批量重标准化接口
+- 🌐 网页爬虫：BFS + Playwright + 公式自动标准化
+- 📷 OCR 多通道：PaddleOCR + Pix2Tex + MathPix
+- 🏷 苏巷雨品牌标识：侧边栏品牌头、欢迎卡片、顶部栏
 
 **改进**
-- System Prompt 重构为四层动态拼接
-- 前端 UI 升级：学段下拉选择器 + 拓展开关 + 侧边栏工具面板
-- SSE 结束事件 `done` → `finish`
-- 公式插入栏（分数/根号/积分/极限等）
-- KaTeX 渲染增强（`$$...$$` + `$...$`）
-- 全代码 P3C 企业规范（0 High/Medium 警告）
+- SSE 新增 `reasoning` 事件类型
+- LaTeX 清洗函数 cleanLatexText/cleanLeakedHtml
+- 系统提示词强制 LaTeX 规范（禁止换行拆公式、下标空格）
+- 新建对话自动清理内存会话（避免旧消息污染）
+- 加载指示优化（推理阶段显示「深度思考中」）
+- 侧边栏公式列表 KaTeX 渲染 + 悬停浮窗 + 复制/插入按钮
 
-**技术栈**
-- Apache PDFBox 3.0.4
-- 自研 InMemoryVectorStore（余弦相似度 + 分层过滤 + JSON 持久化）
-- 自研 MathChunkingStrategy（公式保护 + 章节切分 + 题型识别）
+### v2.0.0 — K12+大学 RAG 智能体
 
-### v1.0.0 — 多厂商大模型统一对话平台
+- 四层学段体系 · RAG 知识库 · PDF 解析/分块/检索 · 双模式嵌入 · 错题本
 
-- 6 厂商适配器（DeepSeek/Kimi/Qwen/GLM/MiniMax/MiMo）
-- SSE 流式聊天
-- Markdown + KaTeX 渲染
-- 会话管理 + 历史记录
-- 深色模式 + API Key 管理
-- IP 限流保护
+### v1.0.0 — 多厂商统一对话平台
+
+- 6 厂商适配器 · SSE 流式 · Markdown + KaTeX · 会话管理 · 深色模式
 
 ---
 

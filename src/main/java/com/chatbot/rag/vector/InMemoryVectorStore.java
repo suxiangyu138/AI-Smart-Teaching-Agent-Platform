@@ -71,6 +71,12 @@ public class InMemoryVectorStore {
             doc.setChapterTitle(chunk.getChapterTitle());
             doc.setKnowledgePoint(chunk.getKnowledgePoint());
             doc.setQuestionType(chunk.getQuestionType());
+            doc.setWeight(chunk.getWeight());
+            doc.setSourceType(chunk.getSourceType());
+            doc.setSourceName(chunk.getSourceName());
+            doc.setPageNum(chunk.getPageNum());
+            doc.setHasFormula(chunk.isHasFormula());
+            doc.setFormulaCount(chunk.getFormulaCount());
 
             store.put(doc.getId(), doc);
         }
@@ -79,9 +85,6 @@ public class InMemoryVectorStore {
 
     /**
      * 向量检索 — 余弦相似度 Top-K（分层过滤）
-     *
-     * @param stage        当前学段
-     * @param allowExtend  是否允许大学拓展
      */
     public List<SearchResult> search(float[] queryEmbedding, int topK,
                                       String stage, boolean allowExtend) {
@@ -91,7 +94,7 @@ public class InMemoryVectorStore {
                 continue;
             }
             double similarity = cosineSimilarity(queryEmbedding, doc.getEmbedding());
-            double weighted = applyStageWeight(doc, similarity);
+            double weighted = applyAllWeights(doc, similarity);
             results.add(buildResult(doc, weighted));
         }
         results.sort(Comparator.comparingDouble(SearchResult::getScore).reversed());
@@ -105,45 +108,123 @@ public class InMemoryVectorStore {
     }
 
     /**
-     * 关键词搜索（降级模式）
+     * 多路召回：向量 + 关键词 + 知识点标签三路融合检索
+     * <p>
+     * 最终得分 = 向量相似度 * 文档权重 + 关键词匹配加分 + 标签匹配加分
      */
-    public List<SearchResult> keywordSearch(String query, int topK,
-                                             String stage, boolean allowExtend) {
-        List<SearchResult> results = new ArrayList<>();
-        String qLower = query.toLowerCase();
+    public List<SearchResult> searchMultiRecall(float[] queryEmbedding, String query,
+                                                  int topK, String stage, boolean allowExtend) {
+        String qLower = query != null ? query.toLowerCase() : "";
         String[] keywords = qLower.split("[\\s，。；：！？、]+");
+        Map<String, SearchResult> merged = new LinkedHashMap<>();
 
         for (VectorDocument doc : store.values()) {
             if (!passesStageFilter(doc, stage, allowExtend)) {
                 continue;
             }
-            String content = doc.getContent().toLowerCase();
-            int score = 0;
-            for (String kw : keywords) {
-                if (kw.length() < MIN_KEYWORD_LEN) {
-                    continue;
-                }
-                int idx = content.indexOf(kw);
-                while (idx >= 0) {
-                    score++;
-                    idx = content.indexOf(kw, idx + kw.length());
-                }
+
+            double vectorScore = 0.0;
+            if (queryEmbedding != null && doc.getEmbedding() != null) {
+                vectorScore = cosineSimilarity(queryEmbedding, doc.getEmbedding());
             }
-            if (content.contains(qLower)) {
-                score += FULL_MATCH_BONUS;
+
+            double keywordScore = keywordMatchScore(doc.getContent(), keywords, qLower);
+            double tagScore = tagMatchScore(doc.getKnowledgePoint(), keywords);
+            double docWeight = applyAllWeights(doc, 1.0);
+
+            // 融合公式：向量60% + 关键词25% + 标签15%，再乘文档权重
+            double finalScore = (vectorScore * 0.6 + keywordScore * 0.25 + tagScore * 0.15) * docWeight;
+
+            if (finalScore <= 0) {
+                continue;
             }
-            if (score > 0) {
-                results.add(buildResult(doc, (double) score));
+
+            SearchResult existing = merged.get(doc.getId());
+            if (existing == null || finalScore > existing.getScore()) {
+                merged.put(doc.getId(), buildResult(doc, finalScore));
             }
         }
+
+        List<SearchResult> results = new ArrayList<>(merged.values());
         results.sort(Comparator.comparingDouble(SearchResult::getScore).reversed());
         return results.stream().limit(topK).collect(Collectors.toList());
+    }
+
+    /** 关键词匹配得分（归一化到 [0,1]） */
+    private double keywordMatchScore(String content, String[] keywords, String fullQuery) {
+        if (content == null) {
+            return 0.0;
+        }
+        String lower = content.toLowerCase();
+        int hits = 0;
+        for (String kw : keywords) {
+            if (kw.length() < MIN_KEYWORD_LEN) {
+                continue;
+            }
+            int idx = lower.indexOf(kw);
+            while (idx >= 0) {
+                hits++;
+                idx = lower.indexOf(kw, idx + kw.length());
+            }
+        }
+        if (lower.contains(fullQuery) && fullQuery.length() > 4) {
+            hits += FULL_MATCH_BONUS;
+        }
+        return Math.min(1.0, hits / 20.0);
+    }
+
+    /** 知识点标签匹配得分 */
+    private double tagMatchScore(String knowledgePoint, String[] keywords) {
+        if (knowledgePoint == null || knowledgePoint.isEmpty()) {
+            return 0.0;
+        }
+        for (String kw : keywords) {
+            if (kw.length() >= 2 && knowledgePoint.contains(kw)) {
+                return 1.0;
+            }
+        }
+        return 0.0;
+    }
+
+    /** 综合权重：学段权重 * 文档来源权重 */
+    private double applyAllWeights(VectorDocument doc, double rawScore) {
+        double stageWeight = 1.0;
+        if (UnifiedChatRequest.STAGE_UNIVERSITY.equals(doc.getGrade())) {
+            stageWeight = 0.6;
+        }
+        double docWeight = doc.getWeight() > 0 ? doc.getWeight() : 1.0;
+        return rawScore * stageWeight * docWeight;
+    }
+
+    /**
+     * 关键词搜索（降级模式）
+     */
+    public List<SearchResult> keywordSearch(String query, int topK,
+                                             String stage, boolean allowExtend) {
+        return searchMultiRecall(null, query, topK, stage, allowExtend);
     }
 
     /** @deprecated 兼容旧调用 */
     @Deprecated
     public List<SearchResult> keywordSearch(String query, int topK, String gradeFilter) {
         return keywordSearch(query, topK, gradeFilter, false);
+    }
+
+    /** 查询语义增强：追加学段限定 */
+    public String enhanceQuery(String query, String stage) {
+        if (query == null || query.isEmpty()) {
+            return query;
+        }
+        if (UnifiedChatRequest.STAGE_PRIMARY.equals(stage)) {
+            return "小学 " + query;
+        }
+        if (UnifiedChatRequest.STAGE_JUNIOR.equals(stage)) {
+            return "初中 课内 " + query + " 中考考点";
+        }
+        if (UnifiedChatRequest.STAGE_SENIOR.equals(stage)) {
+            return "高中 " + query + " 高考考点";
+        }
+        return query;
     }
 
     /** 分层过滤：只取 ≤ 当前学段的文档，大学文档需拓展开关开启 */
@@ -177,15 +258,6 @@ public class InMemoryVectorStore {
         return docOrder <= curOrder;
     }
 
-    /** 学段权重：课内权重 1.0，大学拓展权重 0.6 */
-    private double applyStageWeight(VectorDocument doc, double rawSimilarity) {
-        String docStage = doc.getGrade();
-        if (UnifiedChatRequest.STAGE_UNIVERSITY.equals(docStage)) {
-            return rawSimilarity * 0.6;
-        }
-        return rawSimilarity;
-    }
-
     private SearchResult buildResult(VectorDocument doc, double score) {
         DocumentChunk chunk = new DocumentChunk();
         chunk.setChunkId(doc.getId());
@@ -195,6 +267,10 @@ public class InMemoryVectorStore {
         chunk.setChapterTitle(doc.getChapterTitle());
         chunk.setKnowledgePoint(doc.getKnowledgePoint());
         chunk.setQuestionType(doc.getQuestionType());
+        chunk.setWeight(doc.getWeight());
+        chunk.setSourceType(doc.getSourceType());
+        chunk.setSourceName(doc.getSourceName());
+        chunk.setPageNum(doc.getPageNum());
 
         SearchResult result = new SearchResult();
         result.setChunk(chunk);
@@ -249,6 +325,8 @@ public class InMemoryVectorStore {
             m.put("chapterTitle", doc.getChapterTitle());
             m.put("knowledgePoint", doc.getKnowledgePoint());
             m.put("questionType", doc.getQuestionType());
+            m.put("hasFormula", doc.isHasFormula());
+            m.put("formulaCount", doc.getFormulaCount());
             docs.add(m);
         }
         MAPPER.writeValue(STORE_DIR.resolve("documents.json").toFile(), docs);
@@ -287,6 +365,11 @@ public class InMemoryVectorStore {
             doc.setChapterTitle((String) m.get("chapterTitle"));
             doc.setKnowledgePoint((String) m.get("knowledgePoint"));
             doc.setQuestionType((String) m.get("questionType"));
+            // 公式元数据（向后兼容：旧 JSON 中可能不存在）
+            Object hf = m.get("hasFormula");
+            if (hf instanceof Boolean) doc.setHasFormula((Boolean) hf);
+            Object fc = m.get("formulaCount");
+            if (fc instanceof Number) doc.setFormulaCount(((Number) fc).intValue());
             store.put(doc.getId(), doc);
         }
 
@@ -347,5 +430,70 @@ public class InMemoryVectorStore {
             }
         }
         return 0;
+    }
+
+    // ===== 公式标准化与统计 =====
+
+    /**
+     * 遍历所有文档，检测裸 LaTeX 命令，包裹为 $$...$$，
+     * 更新 hasFormula/formulaCount 元数据，持久化。
+     * 返回修改统计信息。
+     */
+    public Map<String, Object> normalizeFormulas() {
+        int totalDocs = store.size();
+        int modifiedDocs = 0;
+        int formulaDocsFound = 0;
+        int formulaCountTotal = 0;
+
+        for (VectorDocument doc : store.values()) {
+            String content = doc.getContent();
+            if (content == null || content.isEmpty()) continue;
+
+            boolean hasLatex = com.chatbot.rag.crawler.FormulaNormalizer.hasLatexCommands(content);
+            int existingCount = com.chatbot.rag.crawler.FormulaNormalizer.countFormulaBlocks(content);
+
+            String normalized = com.chatbot.rag.crawler.FormulaNormalizer.normalizeBatch(content);
+            boolean contentChanged = !normalized.equals(content);
+
+            int newCount = com.chatbot.rag.crawler.FormulaNormalizer.countFormulaBlocks(normalized);
+
+            doc.setHasFormula(hasLatex || existingCount > 0);
+            doc.setFormulaCount(newCount);
+
+            if (hasLatex) formulaDocsFound++;
+            formulaCountTotal += newCount;
+
+            if (contentChanged) {
+                doc.setContent(normalized);
+                modifiedDocs++;
+            }
+        }
+
+        if (modifiedDocs > 0) {
+            try {
+                persist();
+            } catch (IOException e) {
+                // 持久化失败不影响内存状态
+            }
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("totalDocuments", totalDocs);
+        result.put("modifiedDocuments", modifiedDocs);
+        result.put("documentsWithFormulas", formulaDocsFound);
+        result.put("totalFormulaBlocks", formulaCountTotal);
+        return result;
+    }
+
+    /** 统计含公式的文档数 */
+    public long countDocumentsWithFormulas() {
+        return store.values().stream().filter(VectorDocument::isHasFormula).count();
+    }
+
+    /** 统计所有文档中的公式块总数 */
+    public long countTotalFormulaBlocks() {
+        return store.values().stream()
+                .mapToLong(d -> (long) d.getFormulaCount())
+                .sum();
     }
 }

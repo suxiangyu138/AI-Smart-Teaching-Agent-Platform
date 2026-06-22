@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>初高中数学智能辅导体</title>
+<title>苏巷雨 · 智慧教学智能体</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github-dark.min.css">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
@@ -16,28 +16,68 @@ marked.use({breaks:true,gfm:true,renderer:{code({text:code,lang}){
 </script>
 <style>
 :root{
-  --primary:#2563eb;--primary-light:#3b82f6;--primary-bg:#eff6ff;
-  --bg:linear-gradient(160deg,#f0f4ff 0%,#e8f0fe 40%,#f5f3ff 100%);
-  --surface:#fff;--surface2:#f8fafc;--text:#1e293b;--text2:#64748b;
-  --user-bg:linear-gradient(135deg,#2563eb,#1d4ed8);
+  --primary:#9d7cff;--primary-light:#b49eff;--primary-bg:rgba(140,100,255,.15);
+  --bg:#080822;--surface:rgba(255,255,255,.05);--surface2:rgba(255,255,255,.03);
+  --text:#f0f4ff;--text2:rgba(200,195,220,.7);
+  --user-bg:linear-gradient(135deg,#7b61ff,#4488ff);
+  --ai-bg:rgba(255,255,255,.04);--ai-border:rgba(180,150,255,.12);--input-bg:rgba(255,255,255,.05);--input-border:rgba(190,170,255,.2);
+  --code-bg:rgba(10,10,40,.6);--sep:rgba(180,160,240,.1);--accent:#a78bfa;--success:#34d399;
+  --sidebar-bg:rgba(255,255,255,.03);--sidebar-w:0px;--card-shadow:0 4px 16px rgba(0,0,0,.2);
+  --welcome-gradient:linear-gradient(135deg,#7b61ff,#4488ff);
+  --glass-bg:rgba(255,255,255,.06);--glass-border:rgba(200,180,255,.15);--glass-shadow:0 8px 32px rgba(0,0,10,.3);
+}
+.light{
+  --primary:#6366f1;--primary-light:#818cf8;--primary-bg:rgba(99,102,241,.08);
+  --bg:linear-gradient(160deg,#f0f4ff 0%,#e8f0fe 40%,#f5f3ff 100%);--surface:#fff;--surface2:#f8fafc;
+  --text:#1e293b;--text2:#64748b;
+  --user-bg:linear-gradient(135deg,#6366f1,#4f46e5);
   --ai-bg:#fff;--ai-border:#e2e8f0;--input-bg:#fff;--input-border:#d1d5db;
   --code-bg:#1e293b;--sep:#e2e8f0;--accent:#7c3aed;--success:#059669;
-  --sidebar-bg:#f8fafc;--sidebar-w:0px;--card-shadow:0 1px 3px rgba(0,0,0,.06);
-  --welcome-gradient:linear-gradient(135deg,#2563eb,#7c3aed);
-}
-.dark{
-  --bg:#0f172a;--surface:#1e293b;--surface2:#1a2332;--text:#e2e8f0;
-  --text2:#94a3b8;--ai-bg:#1e293b;--ai-border:#334155;
-  --input-bg:#1a2332;--input-border:#334155;--sep:#334155;
-  --primary-bg:#1e3a5f;--sidebar-bg:#1a2332;
+  --sidebar-bg:#f8fafc;
+  --welcome-gradient:linear-gradient(135deg,#6366f1,#8b5cf6);
+  --card-shadow:0 1px 3px rgba(0,0,0,.06);
+  --glass-bg:rgba(255,255,255,.7);--glass-border:rgba(200,200,220,.3);--glass-shadow:0 4px 20px rgba(0,0,0,.08);
 }
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%;font-family:"Microsoft YaHei","PingFang SC",-apple-system,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
-#app{display:flex;height:100vh;position:relative}
+html,body{height:100%;font-family:"Microsoft YaHei","PingFang SC",-apple-system,sans-serif;color:var(--text);overflow:hidden}
+body{background:linear-gradient(-45deg,#050520,#101035,#1a1040,#080828);background-size:400% 400%;animation:gradientFlow 18s ease infinite}
+body.light{background:linear-gradient(160deg,#f0f4ff 0%,#e8f0fe 40%,#f5f3ff 100%);background-size:100% 100%;animation:none}
+@keyframes gradientFlow{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+#app{display:flex;height:100vh;position:relative;z-index:1}
+/* 星空粒子画布 */
+#particle-canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.light #particle-canvas{display:none}
+/* 鼠标跟随柔光 */
+body::after{content:"";position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(130,80,255,.1),transparent 35%);transition:background .5s}
+.light body::after{background:radial-gradient(circle at var(--mx,50%) var(--my,50%),rgba(99,102,241,.06),transparent 35%)}
+/* 通用玻璃拟态 */
+.glass{background:var(--glass-bg);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--glass-border);border-radius:16px;box-shadow:var(--glass-shadow);transition:all .35s cubic-bezier(.2,0,.2,1)}
+.glass:hover{background:rgba(255,255,255,.09);border-color:rgba(180,140,255,.3);box-shadow:0 12px 40px rgba(120,60,255,.2);transform:translateY(-2px)}
+.light .glass{background:rgba(255,255,255,.65);border:1px solid rgba(200,190,230,.25);box-shadow:0 4px 20px rgba(0,0,0,.06)}
+.light .glass:hover{background:rgba(255,255,255,.8);border-color:rgba(140,100,255,.25);box-shadow:0 8px 30px rgba(100,80,200,.1)}
+/* 渐变发光文字 */
+.text-glow{background:linear-gradient(90deg,#a88bff,#63d0ff,#c99bff);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 0 22px rgba(160,120,255,.4);letter-spacing:2px}
+/* 渐变按钮 */
+.btn-gradient{position:relative;padding:10px 22px;border-radius:12px;border:none;background:linear-gradient(135deg,#7b61ff,#4488ff);color:#fff;font-weight:600;overflow:hidden;transition:all .3s ease;cursor:pointer}
+.btn-gradient::before{content:"";position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);transition:left .5s ease}
+.btn-gradient:hover::before{left:100%}
+.btn-gradient:hover{transform:scale(1.04);box-shadow:0 0 22px rgba(110,80,255,.45)}
+/* 流光边框 */
+.glow-border{position:relative;overflow:hidden}
+.glow-border::before{content:"";position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:conic-gradient(from 0deg,#7b61ff,#44ccff,#c084fc,#7b61ff);animation:spin 4s linear infinite;z-index:-1;opacity:.15}
+@keyframes spin{100%{transform:rotate(360deg)}}
+/* 滚动条 */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:rgba(255,255,255,.03);border-radius:10px}
+::-webkit-scrollbar-thumb{background:rgba(140,100,255,.35);border-radius:10px}
+::-webkit-scrollbar-thumb:hover{background:rgba(140,100,255,.55)}
+.light ::-webkit-scrollbar-thumb{background:rgba(99,102,241,.25)}
+.light ::-webkit-scrollbar-thumb:hover{background:rgba(99,102,241,.45)}
 
 /* ===== 侧边栏 ===== */
-#sidebar{width:260px;min-width:260px;background:var(--sidebar-bg);border-right:1px solid var(--sep);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;transition:margin-left .3s;z-index:50;flex-shrink:0}
-#sidebar.collapsed{margin-left:-260px}
+#sidebar{width:260px;min-width:260px;background:var(--glass-bg);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-right:1px solid var(--glass-border);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;transition:margin-left .3s;z-index:50;flex-shrink:0;margin:10px 0 10px 10px;border-radius:16px}
+.light #sidebar{background:rgba(255,255,255,.6);border-right:1px solid rgba(200,190,230,.2)}
+#sidebar.collapsed{margin-left:-270px}
 .side-section{padding:12px 14px;border-bottom:1px solid var(--sep)}
 .side-section h4{font-size:13px;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;gap:6px}
 .side-section h4 .icon{font-size:16px}
@@ -46,102 +86,161 @@ html,body{height:100%;font-family:"Microsoft YaHei","PingFang SC",-apple-system,
 .grade-btn.active{background:var(--primary);color:#fff;border-color:var(--primary);font-weight:600}
 .grade-btn:hover:not(.active){border-color:var(--primary-light);color:var(--primary)}
 .kp-tree{max-height:280px;overflow-y:auto}
-.kp-tag{display:inline-block;padding:3px 10px;margin:2px 3px;border-radius:12px;background:var(--primary-bg);color:var(--primary);font-size:11px;cursor:pointer;transition:all .15s;border:1px solid transparent}
-.kp-tag:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
+.kp-tag{display:inline-block;padding:3px 10px;margin:2px 3px;border-radius:12px;background:var(--primary-bg);color:var(--primary);font-size:11px;cursor:pointer;transition:all .2s;border:1px solid transparent}
+.kp-tag:hover{background:var(--primary);color:#fff;border-color:var(--primary);transform:translateY(-1px)}
 .kp-cat{font-size:11px;font-weight:700;color:var(--text2);margin-top:8px;margin-bottom:3px;padding-left:2px}
-.formula-item{font-size:12px;color:var(--primary);padding:4px 8px;margin:2px 0;cursor:pointer;border-radius:6px;transition:all .15s;border-left:2px solid transparent}
-.formula-item:hover{background:var(--primary-bg);border-left-color:var(--primary)}
-.formula-item .fn{font-weight:600}
-.formula-item .fv{color:var(--text2);font-size:11px;margin-left:6px}
-.error-item{font-size:12px;padding:6px 8px;margin:3px 0;background:var(--surface);border-radius:8px;cursor:pointer;border:1px solid var(--sep);transition:all .15s}
-.error-item:hover{border-color:var(--primary-light)}
+.formula-item{font-size:12px;color:var(--primary);padding:5px 8px;margin:3px 0;cursor:pointer;border-radius:8px;transition:all .2s;border-left:2px solid transparent;display:flex;align-items:center;gap:6px;position:relative}
+.formula-item:hover{background:var(--primary-bg);border-left-color:var(--primary);transform:translateX(3px)}
+.formula-item .fn{font-weight:600;color:var(--primary);flex-shrink:0;min-width:0}
+.formula-item .fv{color:var(--text2);font-size:0.95em;flex:1;min-width:0;overflow-x:auto}
+.formula-item .fv .katex{font-size:0.95em}
+.formula-item .fv .katex-display{margin:2px 0;padding:0}
+.formula-item .f-actions{display:none;gap:3px;flex-shrink:0}
+.formula-item:hover .f-actions{display:flex}
+.formula-item .f-btn{font-size:10px;padding:2px 5px;border-radius:4px;border:1px solid var(--sep);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s;white-space:nowrap}
+.formula-item .f-btn:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
+/* 公式悬浮预览弹窗 */
+#formula-popup{position:fixed;z-index:300;background:rgba(20,15,45,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(180,150,255,.25);border-radius:14px;padding:14px 18px;box-shadow:0 12px 40px rgba(80,40,180,.3);max-width:420px;display:none}
+.light #formula-popup{background:rgba(255,255,255,.95);border:1px solid rgba(140,100,255,.2);box-shadow:0 8px 30px rgba(0,0,0,.15)}
+#formula-popup .popup-title{font-size:13px;font-weight:700;color:var(--primary);margin-bottom:8px}
+#formula-popup .popup-formula{font-size:1.15em;overflow-x:auto}
+#formula-popup .popup-latex{font-size:11px;color:var(--text2);margin-top:6px;font-family:Consolas,monospace;background:var(--surface2);padding:4px 8px;border-radius:4px;word-break:break-all;display:block}
+#formula-popup .popup-actions{display:flex;gap:6px;margin-top:8px}
+#formula-popup .popup-actions button{font-size:11px;padding:4px 10px;border-radius:14px;border:1px solid var(--sep);background:var(--surface2);color:var(--text);cursor:pointer;transition:all .15s}
+#formula-popup .popup-actions button:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
+#formula-popup .popup-hint{font-size:10px;color:var(--text2);margin-top:4px}
+.error-item{font-size:12px;padding:6px 8px;margin:3px 0;background:var(--surface);border-radius:8px;cursor:pointer;border:1px solid var(--sep);transition:all .2s}
+.error-item:hover{border-color:var(--primary-light);transform:translateX(2px)}
 .error-item .eq{color:var(--text);font-weight:500}
 .error-item .em{color:var(--text2);font-size:10px;display:block;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.error-del{float:right;color:#ef4444;font-size:10px;padding:2px 6px;border-radius:4px;border:1px solid #fecaca;background:#fef2f2;cursor:pointer}
-.error-del:hover{background:#fecaca}
+.error-del{float:right;color:#ef4444;font-size:10px;padding:2px 6px;border-radius:4px;border:1px solid rgba(239,68,68,.2);background:rgba(239,68,68,.08);cursor:pointer}
+.error-del:hover{background:rgba(239,68,68,.2)}
 .empty-hint{font-size:11px;color:var(--text2);text-align:center;padding:16px 0}
+/* 历史对话列表 */
+.history-item{font-size:12px;padding:6px 10px;margin:2px 0;cursor:pointer;border-radius:8px;transition:all .2s;border-left:2px solid transparent;position:relative;color:var(--text)}
+.history-item:hover{background:var(--primary-bg);border-left-color:var(--primary-light)}
+.history-item.active{background:var(--primary-bg);border-left-color:var(--primary);font-weight:600}
+.history-item .htitle{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:20px}
+.history-item .htime{font-size:10px;color:var(--text2);margin-top:1px}
+.history-item .hdel{position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:10px;color:#ef4444;cursor:pointer;padding:2px 4px;border-radius:3px;display:none}
+.history-item:hover .hdel{display:block}
+.history-item .hdel:hover{background:rgba(239,68,68,.15)}
 
 /* ===== 主区域 ===== */
-#main-area{flex:1;display:flex;flex-direction:column;min-width:0}
-#top-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--sep);flex-shrink:0;gap:8px;z-index:40}
-#top-bar h1{font-size:17px;font-weight:700;white-space:nowrap;background:var(--welcome-gradient);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#main-area{flex:1;display:flex;flex-direction:column;min-width:0;position:relative}
+#top-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;margin:10px 12px 0;background:var(--glass-bg);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--glass-border);border-radius:16px;flex-shrink:0;gap:8px;z-index:40}
+.light #top-bar{background:rgba(255,255,255,.7);border:1px solid rgba(200,190,230,.2)}
+#top-bar h1{font-size:17px;font-weight:700;white-space:nowrap;background:linear-gradient(90deg,#a88bff,#63d0ff,#c99bff);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.light #top-bar h1{background:var(--welcome-gradient);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .top-btns{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .top-btn,.model-sel{font-size:11px;padding:4px 10px;border-radius:14px;border:1px solid var(--sep);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all .2s;white-space:nowrap}
-.top-btn:hover,.model-sel:hover{background:var(--sep);color:var(--text)}
+.top-btn:hover,.model-sel:hover{background:rgba(140,100,255,.15);color:var(--text);border-color:var(--primary-light)}
 .model-sel{padding:4px 8px;appearance:none;-webkit-appearance:none;text-align:center;max-width:130px}
 .model-name{font-size:11px;color:var(--text2);margin:0 2px;white-space:nowrap}
-.math-badge{display:inline-block;padding:2px 8px;border-radius:10px;background:#fef3c7;color:#92400e;font-size:10px;font-weight:600;margin-left:4px}
+.math-badge{display:inline-block;padding:2px 8px;border-radius:10px;background:rgba(160,130,255,.15);color:var(--primary-light);font-size:10px;font-weight:600;margin-left:4px;border:1px solid rgba(160,130,255,.2)}
+.light .math-badge{background:#fef3c7;color:#92400e;border-color:#fcd34d}
 
 #chat-list{flex:1;overflow-y:auto;padding:16px 12px 10px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth}
 .row{display:flex;width:100%;animation:fadeUp .35s ease-out}
 .row.user{justify-content:flex-end}.row.ai{justify-content:flex-start}.row.system{justify-content:center}
 .bubble{max-width:85%;padding:14px 18px;font-size:15px;line-height:1.7;word-wrap:break-word;overflow-wrap:break-word;white-space:pre-wrap;word-break:break-word;position:relative}
-.user .bubble{background:var(--user-bg);color:#fff;border-radius:18px 18px 4px 18px;box-shadow:0 2px 8px rgba(37,99,235,.15)}
-.ai .bubble{background:var(--ai-bg);color:var(--text);border:1px solid var(--ai-border);border-radius:18px 18px 18px 4px;box-shadow:var(--card-shadow)}
+.user .bubble{background:linear-gradient(135deg,#7b61ff,#4488ff);color:#fff;border-radius:18px 18px 4px 18px;box-shadow:0 4px 16px rgba(120,80,255,.3)}
+.ai .bubble{background:var(--glass-bg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:var(--text);border:1px solid var(--glass-border);border-radius:18px 18px 18px 4px;box-shadow:var(--glass-shadow)}
+.light .ai .bubble{background:rgba(255,255,255,.7);border:1px solid rgba(200,190,230,.2)}
 .system .bubble{background:0 0;color:var(--text2);text-align:center;font-size:13px;max-width:100%}
 .time-stamp{font-size:10px;color:var(--text2);margin-top:4px;text-align:right}.ai .time-stamp{text-align:left}
 /* AI回答卡片化 */
 .ai .bubble h1,.ai .bubble h2,.ai .bubble h3{font-size:16px;font-weight:700;margin:8px 0 4px;padding-bottom:4px}
 .ai .bubble h1{font-size:18px;color:var(--primary);border-bottom:2px solid var(--primary-bg)}
-.ai .bubble h2{font-size:16px;color:#1e40af;border-bottom:1px solid var(--primary-bg)}
-.ai .bubble h3{font-size:15px;color:#333}
+.ai .bubble h2{font-size:16px;color:var(--primary-light);border-bottom:1px solid var(--primary-bg)}
+.ai .bubble h3{font-size:15px;color:var(--text)}
 .ai .bubble p{margin:4px 0}
 .ai .bubble ul,.ai .bubble ol{margin:4px 0 4px 22px}.ai .bubble li{margin:3px 0}
-.ai .bubble code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:13px;font-family:Consolas,monospace;color:#e11d48}
+.ai .bubble code{background:rgba(140,100,255,.1);padding:2px 6px;border-radius:4px;font-size:13px;font-family:Consolas,monospace;color:#f472b6}
+.light .ai .bubble code{background:#f1f5f9;color:#e11d48}
 .ai .bubble pre,.step-block{background:var(--code-bg);border-radius:10px;padding:14px;overflow-x:auto;margin:10px 0;font-size:13px;line-height:1.6}
 .ai .bubble pre code{background:0 0;padding:0;font-size:13px;color:#e2e8f0}
 .step-block{position:relative;margin:10px 0;border-left:3px solid var(--primary)}
-.step-header{display:flex;align-items:center;gap:6px;color:#93c5fd;font-size:12px;font-weight:600;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #334155}
-.ai .bubble blockquote{border-left:3px solid var(--primary);padding:6px 14px;margin:10px 0;background:var(--primary-bg);border-radius:0 6px 6px 0;color:#475569}
+.step-header{display:flex;align-items:center;gap:6px;color:var(--primary-light);font-size:12px;font-weight:600;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(160,140,255,.15)}
+.ai .bubble blockquote{border-left:3px solid var(--primary);padding:6px 14px;margin:10px 0;background:var(--primary-bg);border-radius:0 6px 6px 0;color:var(--text2)}
 .ai .bubble table{border-collapse:collapse;margin:10px 0;width:100%;font-size:13px}
 .ai .bubble th{background:var(--primary);color:#fff;padding:8px 12px;font-weight:600}
-.ai .bubble td{border:1px solid #e2e8f0;padding:6px 12px}.ai .bubble tr:nth-child(even) td{background:#f8fafc}
-.ai .bubble a{color:var(--primary)}.ai .bubble hr{border:0;border-top:1px solid var(--sep);margin:12px 0}.ai .bubble strong{font-weight:700;color:var(--primary)}
-/* KaTeX公式增强 */
-.katex-display{margin:12px 0;padding:8px 0;overflow-x:auto}
+.ai .bubble td{border:1px solid var(--sep);padding:6px 12px}.ai .bubble tr:nth-child(even) td{background:rgba(140,100,255,.05)}
+.ai .bubble a{color:var(--primary)}.ai .bubble hr{border:0;border-top:1px solid var(--sep);margin:12px 0}.ai .bubble strong{font-weight:700;color:var(--primary-light)}
+/* KaTeX公式增强 — 防跳动 */
+.katex-display{margin:12px 0;padding:8px 0;overflow-x:auto;min-height:44px;overflow-anchor:none}
 .katex{font-size:1.1em}
+.katex-tag{min-width:32px;text-align:right;display:inline-block}
+html{overflow-anchor:auto !important}
+/* 思考过程折叠面板 */
+.think-toggle-bar{margin-bottom:8px;min-height:24px}
+.toggle-think-btn{padding:3px 12px;border-radius:16px;border:1px solid rgba(160,140,255,.25);background:rgba(255,255,255,.03);color:var(--text2);cursor:pointer;transition:all .25s;font-size:12px}
+.toggle-think-btn:hover{background:rgba(120,80,255,.12);border-color:var(--primary);color:var(--primary-light)}
+.toggle-think-btn.active{color:var(--accent);border-color:rgba(160,140,255,.4)}
+.collapse-wrap{max-height:0;overflow:hidden;transition:max-height .4s ease-out;opacity:0;margin-top:0}
+.collapse-wrap.open{max-height:3000px;opacity:1;margin-top:10px}
+.think-block{border:1px dashed rgba(160,140,200,.2);border-radius:10px;background:rgba(100,80,160,.06);padding:10px 14px;color:var(--text2);font-size:13px;line-height:1.6}
+.think-block .think-title{font-weight:600;margin-bottom:6px;color:var(--accent);font-size:12px}
+.think-block .think-content{white-space:pre-wrap;word-break:break-word}
+.think-block .katex{font-size:.95em}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .loading-dots{color:var(--text2);font-style:italic}
 .loading-dots .dot{animation:blink 1.4s infinite;font-weight:700}
 .loading-dots .dot:nth-child(2){animation-delay:.2s}.loading-dots .dot:nth-child(3){animation-delay:.4s}
 @keyframes blink{0%,20%{opacity:0}50%{opacity:1}100%{opacity:0}}
-#back-btn{position:fixed;right:24px;bottom:160px;background:var(--welcome-gradient);color:#fff;border:none;border-radius:24px;padding:8px 18px;font-size:13px;cursor:pointer;box-shadow:0 4px 16px rgba(37,99,235,.25);display:none;z-index:10;transition:all .3s}
-#back-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(37,99,235,.35)}
-#input-area{background:var(--surface);border-top:1px solid var(--sep);padding:10px 16px 14px;flex-shrink:0}
+#back-btn{position:fixed;right:24px;bottom:160px;background:linear-gradient(135deg,#7b61ff,#4488ff);color:#fff;border:none;border-radius:24px;padding:8px 18px;font-size:13px;cursor:pointer;box-shadow:0 4px 16px rgba(120,80,255,.3);display:none;z-index:10;transition:all .3s}
+#back-btn:hover{transform:translateY(-2px);box-shadow:0 6px 22px rgba(120,80,255,.45)}
+#input-area{background:var(--glass-bg);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-top:1px solid var(--glass-border);padding:10px 16px 14px;flex-shrink:0;margin:0 12px 10px;border-radius:16px}
+.light #input-area{background:rgba(255,255,255,.7);border-top:1px solid rgba(200,190,230,.2)}
 #formula-bar{display:flex;gap:4px;margin-bottom:6px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}
-#formula-bar button{font-size:11px;padding:4px 10px;border-radius:14px;border:1px solid #c7d2fe;background:var(--primary-bg);color:var(--primary);cursor:pointer;white-space:nowrap;transition:all .15s;font-family:Consolas,monospace}
+#formula-bar button{font-size:11px;padding:4px 10px;border-radius:14px;border:1px solid rgba(160,130,255,.2);background:rgba(140,100,255,.1);color:var(--primary-light);cursor:pointer;white-space:nowrap;transition:all .15s;font-family:Consolas,monospace}
 #formula-bar button:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
 #quick-bar{display:flex;gap:6px;margin-bottom:8px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}
-#quick-bar button{font-size:12px;background:var(--surface2);color:var(--primary);border:1.5px solid #bfdbfe;border-radius:20px;padding:5px 14px;cursor:pointer;white-space:nowrap;transition:all .2s;font-weight:500}
-#quick-bar button:hover{background:#dbeafe;border-color:var(--primary-light);transform:translateY(-1px)}
-#quick-bar button.math-action{background:var(--primary-bg);color:var(--accent);border-color:#ddd6fe}
-#quick-bar button.math-action:hover{background:#ede9fe;border-color:var(--accent)}
+#quick-bar button{font-size:12px;background:var(--surface2);color:var(--primary-light);border:1.5px solid rgba(140,120,255,.2);border-radius:20px;padding:5px 14px;cursor:pointer;white-space:nowrap;transition:all .2s;font-weight:500}
+#quick-bar button:hover{background:rgba(140,100,255,.12);border-color:var(--primary-light);transform:translateY(-1px)}
+#quick-bar button.math-action{background:rgba(140,100,255,.1);color:var(--accent);border-color:rgba(160,130,255,.2)}
+#quick-bar button.math-action:hover{background:rgba(140,100,255,.2);border-color:var(--accent)}
 #input-row{display:flex;gap:8px;align-items:flex-end}
-#input-box{flex:1;padding:12px 16px;background:var(--input-bg);border:1.5px solid var(--input-border);border-radius:24px;font-size:15px;font-family:inherit;resize:none;outline:none;min-height:46px;max-height:120px;line-height:1.5;color:var(--text);transition:border-color .2s}
-#input-box:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
-#send-btn{padding:12px 24px;background:var(--welcome-gradient);color:#fff;border:none;border-radius:24px;font-size:15px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s;box-shadow:0 2px 8px rgba(37,99,235,.2)}
-#send-btn:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(37,99,235,.3)}
-#send-btn:disabled{background:#93c5fd;box-shadow:none;cursor:not-allowed;transform:none}
+#input-box{flex:1;padding:12px 16px;background:rgba(255,255,255,.04);border:1.5px solid rgba(190,170,255,.2);border-radius:24px;font-size:15px;font-family:inherit;resize:none;outline:none;min-height:46px;max-height:120px;line-height:1.5;color:var(--text);transition:all .25s}
+.light #input-box{background:var(--input-bg);border:1.5px solid var(--input-border)}
+#input-box:focus{border-color:var(--primary);box-shadow:0 0 0 4px rgba(130,100,255,.15)}
+#send-btn{padding:12px 24px;background:linear-gradient(135deg,#7b61ff,#4488ff);color:#fff;border:none;border-radius:24px;font-size:15px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s;box-shadow:0 2px 12px rgba(120,80,255,.3)}
+#send-btn:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(120,80,255,.45)}
+#send-btn:disabled{background:rgba(140,120,200,.3);box-shadow:none;cursor:not-allowed;transform:none}
 #stop-btn{padding:12px 24px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;border-radius:24px;font-size:15px;font-weight:600;cursor:pointer;display:none;white-space:nowrap;box-shadow:0 2px 8px rgba(239,68,68,.2)}
 #status{font-size:11px;color:var(--text2);padding:3px 18px 0}
 /* 欢迎卡片 */
-.welcome-card{text-align:center;padding:50px 20px;animation:fadeUp .5s ease-out}
-.welcome-card .wicon{font-size:56px;margin-bottom:16px;display:block}
-.welcome-card h2{font-size:26px;font-weight:800;background:var(--welcome-gradient);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
-.welcome-card p{color:var(--text2);font-size:14px;margin-bottom:20px;line-height:1.6}
+.welcome-card{text-align:center;padding:50px 20px;animation:fadeUp .5s ease-out;position:relative}
+.welcome-card::before{content:"";position:absolute;inset:-2px;border-radius:20px;padding:2px;background:conic-gradient(from 0deg,#7b61ff,#44ccff,#c084fc,#7b61ff);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:spin 4s linear infinite;opacity:.2;pointer-events:none}
+.welcome-card .wicon-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:12px}
+.welcome-card .wicon{font-size:52px;display:block;filter:drop-shadow(0 0 16px rgba(130,100,255,.4))}
+.welcome-card .wbrand{font-size:30px;font-weight:900;background:linear-gradient(90deg,#a88bff,#63d0ff,#c99bff);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:4px;text-shadow:0 0 22px rgba(160,120,255,.4)}
+.light .welcome-card .wbrand{background:var(--welcome-gradient);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:none}
+.welcome-card h2{font-size:24px;font-weight:700;background:linear-gradient(90deg,#a88bff,#63d0ff);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:10px}
+.light .welcome-card h2{background:var(--welcome-gradient);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.welcome-card .wsub{color:var(--accent);font-size:13px;font-weight:600;margin-bottom:4px}
+.welcome-card .wdesc{color:var(--text2);font-size:14px;margin-bottom:20px;line-height:1.6}
 .welcome-card .suggestions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
-.welcome-card .suggestions button{padding:10px 18px;border-radius:22px;border:1.5px solid #bfdbfe;background:#fff;color:var(--primary);font-size:13px;cursor:pointer;transition:all .2s}
-.welcome-card .suggestions button:hover{background:var(--primary-bg);transform:translateY(-1px);border-color:var(--primary-light)}
+.welcome-card .suggestions button{padding:10px 18px;border-radius:22px;border:1.5px solid rgba(150,130,255,.25);background:rgba(255,255,255,.04);color:var(--primary-light);font-size:13px;cursor:pointer;transition:all .2s}
+.light .welcome-card .suggestions button{background:#fff;border-color:#bfdbfe;color:var(--primary)}
+.welcome-card .suggestions button:hover{background:rgba(140,100,255,.12);transform:translateY(-1px);border-color:var(--primary-light)}
 .welcome-card .quick-funcs{display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap}
-.welcome-card .quick-funcs span{padding:6px 14px;background:var(--primary-bg);border-radius:16px;font-size:12px;color:var(--primary);font-weight:500}
+.welcome-card .quick-funcs span{padding:6px 14px;background:rgba(140,100,255,.1);border-radius:16px;font-size:12px;color:var(--primary-light);font-weight:500;border:1px solid rgba(140,100,255,.12)}
+/* 侧边栏品牌头 */
+.side-brand{text-align:center;padding:14px 12px;background:linear-gradient(135deg,#7b61ff,#4488ff);border-radius:16px 16px 0 0}
+.side-brand .sb-name{font-size:20px;font-weight:900;color:#fff;letter-spacing:2px}
+.side-brand .sb-sub{font-size:11px;color:rgba(255,255,255,.8);margin-top:2px}
 /* 侧边栏切换按钮 */
-#sidebar-toggle{position:fixed;left:0;top:50%;transform:translateY(-50%);background:var(--primary);color:#fff;border:none;border-radius:0 8px 8px 0;padding:16px 6px;font-size:12px;cursor:pointer;z-index:60;writing-mode:vertical-lr;transition:all .2s;box-shadow:2px 0 8px rgba(0,0,0,.1)}
-#sidebar-toggle:hover{background:var(--primary-light);padding:20px 8px}
+#sidebar-toggle{position:fixed;left:0;top:50%;transform:translateY(-50%);background:var(--primary);color:#fff;border:none;border-radius:0 8px 8px 0;padding:16px 6px;font-size:12px;cursor:pointer;z-index:60;writing-mode:vertical-lr;transition:all .2s;box-shadow:0 0 16px rgba(130,100,255,.3)}
+#sidebar-toggle:hover{background:var(--primary-light);padding:20px 8px;box-shadow:0 0 24px rgba(130,100,255,.5)}
 /* Toast */
-#toast{position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;z-index:200;opacity:0;transition:opacity .3s;pointer-events:none}
+#toast{position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:rgba(20,15,45,.9);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;z-index:200;opacity:0;transition:opacity .3s;pointer-events:none;border:1px solid rgba(160,130,255,.2)}
+.light #toast{background:rgba(30,41,59,.9);border:1px solid rgba(0,0,0,.1)}
 /* 收藏按钮浮层 */
-#fav-btn{position:fixed;right:24px;bottom:210px;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:20px;padding:6px 14px;font-size:12px;cursor:pointer;z-index:10;display:none;transition:all .2s;font-weight:500}
-#fav-btn:hover{background:#fde68a}
+#fav-btn{position:fixed;right:24px;bottom:210px;background:rgba(160,130,255,.1);color:var(--primary-light);border:1px solid rgba(160,130,255,.2);border-radius:20px;padding:6px 14px;font-size:12px;cursor:pointer;z-index:10;display:none;transition:all .2s;font-weight:500}
+#fav-btn:hover{background:rgba(160,130,255,.2);border-color:var(--primary)}
+.light #fav-btn{background:#fef3c7;color:#92400e;border-color:#fcd34d}
+.light #fav-btn:hover{background:#fde68a}
 /* RAG 开关激活态 */
 #rag-toggle:checked + #rag-toggle-bg{background:var(--primary)}
 #rag-toggle:checked ~ #rag-toggle-dot{transform:translateX(16px)}
@@ -154,16 +253,16 @@ html,body{height:100%;font-family:"Microsoft YaHei","PingFang SC",-apple-system,
 
 /* 设置弹窗 */
 #settings-overlay,#model-config-overlay,#kb-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);z-index:100;justify-content:center;align-items:center}
-#settings-dialog{background:var(--surface);border-radius:16px;padding:28px;width:460px;max-height:90vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.15);color:var(--text)}
+#settings-dialog{background:var(--glass-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:16px;padding:28px;width:460px;max-height:90vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.4);color:var(--text);border:1px solid var(--glass-border)}
+.light #settings-dialog{background:#fff;box-shadow:0 12px 40px rgba(0,0,0,.15);border:1px solid var(--sep)}
 #settings-dialog h3{font-size:18px;font-weight:700;margin-bottom:18px}
 #settings-dialog label{display:block;font-size:13px;color:var(--text2);margin-top:12px;margin-bottom:4px}
 #settings-dialog input,#settings-dialog select{width:100%;padding:10px 14px;background:var(--input-bg);border:1px solid var(--input-border);border-radius:10px;font-size:14px;margin-bottom:4px;color:var(--text)}
 #settings-dialog .btn-row{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
 #settings-dialog .btn-row button{padding:10px 22px;border-radius:10px;border:none;cursor:pointer;font-size:14px;font-weight:600;transition:all .2s}
-#settings-dialog .btn-save{background:var(--welcome-gradient);color:#fff}
-#settings-dialog .btn-save:hover{transform:translateY(-1px)}
+#settings-dialog .btn-save{background:linear-gradient(135deg,#7b61ff,#4488ff);color:#fff}
+#settings-dialog .btn-save:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(120,80,255,.4)}
 #settings-dialog .btn-cancel{background:var(--surface2);color:var(--text);border:1px solid var(--sep)}
-::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
 /* 响应式 */
 @media(max-width:768px){
   #sidebar{position:fixed;left:0;top:0;height:100%;z-index:55;margin-left:0}
@@ -175,12 +274,25 @@ html,body{height:100%;font-family:"Microsoft YaHei","PingFang SC",-apple-system,
 </style>
 </head>
 <body>
+<canvas id="particle-canvas"></canvas>
 <div id="app">
 <!-- 侧边栏切换 -->
-<button id="sidebar-toggle" onclick="toggleSidebar()" title="功能面板">☰ 数学工具</button>
+<button id="sidebar-toggle" onclick="toggleSidebar()" title="功能面板">☰ 教学工具</button>
 
 <!-- 侧边栏 -->
 <div id="sidebar">
+  <div class="side-brand">
+    <div class="sb-name">苏巷雨</div>
+    <div class="sb-sub">智慧教学智能体</div>
+  </div>
+  <div class="side-section" id="history-section">
+    <h4><span class="icon">📜</span> 历史对话
+      <button class="f-btn" onclick="createNewSession()" style="margin-left:auto;font-size:11px" title="新建对话">＋ 新建</button>
+    </h4>
+    <div id="history-list" style="max-height:180px;overflow-y:auto">
+      <div class="empty-hint">加载中...</div>
+    </div>
+  </div>
   <div class="side-section">
     <h4><span class="icon">🎓</span> 学段选择</h4>
     <select id="stage-sel" onchange="onStageChange()" style="width:100%;padding:6px 10px;border-radius:8px;border:1px solid var(--sep);background:var(--surface);font-size:12px;color:var(--text);margin-bottom:6px">
@@ -227,7 +339,7 @@ html,body{height:100%;font-family:"Microsoft YaHei","PingFang SC",-apple-system,
 <!-- 主区域 -->
 <div id="main-area">
 <div id="top-bar">
-  <h1>📐 初高中数学智能辅导体</h1>
+  <h1>🎓 苏巷雨 · 智慧教学智能体</h1>
   <div class="top-btns">
     <select id="provider-sel" class="model-sel" onchange="onProviderChange()"></select>
     <select id="model-sel" class="model-sel" onchange="saveCurrentConfig()"></select>
@@ -242,11 +354,15 @@ html,body{height:100%;font-family:"Microsoft YaHei","PingFang SC",-apple-system,
 
 <div id="chat-list">
   <div class="welcome-card">
-    <span class="wicon">📐</span>
-    <h2>初高中数学智能辅导体</h2>
-    <p>支持：函数 · 几何 · 导数 · 数列 · 方程 · 证明题<br>多厂商推理模型一键切换 | 公式渲染 | 分步解析</p>
+    <div class="wicon-row">
+      <span class="wicon">🎓</span>
+      <span class="wbrand">苏巷雨</span>
+    </div>
+    <h2>智慧教学智能体</h2>
+    <p class="wsub">K12数学辅导 · 多模型推理 · 公式渲染 · 知识库RAG增强</p>
+    <p class="wdesc">支持：函数 · 几何 · 导数 · 数列 · 方程 · 证明题 · 概率统计<br>多厂商推理模型一键切换 | LaTeX公式实时渲染 | 分步解析</p>
     <div class="quick-funcs">
-      <span>🔍 解题</span><span>📖 公式查询</span><span>📝 错题整理</span><span>📊 知识点总结</span>
+      <span>🔍 解题</span><span>📖 公式查询</span><span>📝 错题整理</span><span>📊 知识点总结</span><span>🤖 RAG知识库</span>
     </div>
     <div class="suggestions" style="margin-top:18px">
       <button onclick="quickSend('解方程：x² + 3x - 10 = 0')">解一元二次方程</button>
@@ -286,11 +402,21 @@ html,body{height:100%;font-family:"Microsoft YaHei","PingFang SC",-apple-system,
     <button id="send-btn" onclick="sendMessage()">📤 发送</button>
     <button id="stop-btn" onclick="stopGeneration()">⏹ 停止</button>
   </div>
-  <div id="status">✅ 就绪 — 选择模型并输入数学题目开始辅导</div>
+  <div id="status">✅ 就绪 — 苏巷雨智慧教学智能体 · 选择模型开始辅导</div>
 </div>
 </div></div>
 
 <div id="toast"></div>
+
+<div id="formula-popup">
+  <div class="popup-title"></div>
+  <div class="popup-formula"></div>
+  <div class="popup-latex"></div>
+  <div class="popup-actions">
+    <button onclick="copyFormulaLatex(_popupFormulaLatex)">📋 复制 LaTeX</button>
+    <button onclick="insertFormulaToInput(_popupFormulaLatex)">📥 插入到输入框</button>
+  </div>
+</div>
 
 <div id="settings-overlay" onclick="if(event.target===this)closeSettings()">
 <div id="settings-dialog"><h3>🔑 配置 API Key</h3>
@@ -320,6 +446,8 @@ html,body{height:100%;font-family:"Microsoft YaHei","PingFang SC",-apple-system,
     <button class="top-btn" onclick="refreshKbFileList()">🔄 刷新列表</button>
     <button class="top-btn" onclick="buildKbIndex()" style="background:var(--primary);color:#fff;border-color:var(--primary)">🚀 批量索引</button>
     <button class="top-btn" onclick="buildKbIncremental()">📥 增量索引</button>
+    <button class="top-btn" onclick="retryFailedWithOcr()" style="background:#fef3c7;color:#92400e;border-color:#fcd34d">📷 重试OCR</button>
+    <button class="top-btn" onclick="configMathPix()" style="background:#e0e7ff;color:#3730a3;border-color:#c7d2fe">🧠 MathPix</button>
     <button class="top-btn" onclick="resetKbCheckpoint()">🔁 重置断点</button>
     <button class="top-btn" onclick="loadFailedFiles()">⚠ 失败清单</button>
   </div>
@@ -408,6 +536,7 @@ let allowExtend=false;       // 是否允许大学拓展
 let lastAiFullText=''; // 最后一条AI完整回答
 let providers=[],currentConfig={provider:'deepseek',modelName:'deepseek-chat',apiKey:'',baseUrl:'https://api.deepseek.com/v1',temperature:0.2,maxTokens:4096};
 let savedConfigs={},sidebarOpen=true;
+let currentDbSessionId=null; // 当前数据库会话ID
 
 // ===== 学段管理 =====
 function onStageChange(){
@@ -454,7 +583,7 @@ function getStageLabel(s){
 function toggleSidebar(){
   sidebarOpen=!sidebarOpen;
   document.getElementById('sidebar').classList.toggle('collapsed',!sidebarOpen);
-  document.getElementById('sidebar-toggle').textContent=sidebarOpen?'☰ 数学工具':'▶';
+  document.getElementById('sidebar-toggle').textContent=sidebarOpen?'☰ 教学工具':'▶';
   localStorage.setItem('sidebarOpen',sidebarOpen?'1':'0');
 }
 
@@ -471,9 +600,90 @@ function renderKnowledgePoints(){
   }
 }
 function renderFormulas(){
-  let list=document.getElementById('formula-list'),grade=getStage();
-  let formulas=FORMULAS[grade]||[];
-  list.innerHTML=formulas.map(f=>'<div class="formula-item" onclick="quickSend(\'请解释公式：'+f.n+'\')" title="点击查询此公式"><span class="fn">'+f.n+'</span><span class="fv">'+f.v.replace(/<[^>]*>/g,'').replace(/\$\$/g,'').substring(0,40)+'...</span></div>').join('');
+  var list=document.getElementById('formula-list'),grade=getStage();
+  var formulas=FORMULAS[grade]||[];
+  list.innerHTML=formulas.map(function(f){
+    var rendered='';
+    var latex=f.v;
+    if(typeof katex!=='undefined'){
+      try{
+        var inner=latex.replace(/^\$\$([\s\S]*)\$\$$/,'$1').trim();
+        rendered=katex.renderToString(inner,{displayMode:true,throwOnError:false,trust:true,strict:false});
+      }catch(e){
+        rendered='<code style="font-size:11px;color:#e11d48;word-break:break-all">'+escapeHtml(latex)+'</code>';
+      }
+    }else{
+      rendered='<code style="font-size:11px;color:var(--text2)">'+escapeHtml(latex)+'</code>';
+    }
+    var escapedName=escapeHtml(f.n);
+    var escapedLatex=escapeHtml(latex).replace(/'/g,"\\'");
+    return'<div class="formula-item" onmouseenter="showFormulaPopup(event,\''+escapedName+'\',\''+escapedLatex+'\')" onmouseleave="hideFormulaPopup()" onclick="quickSend(\'请解释公式：'+escapedName+'\')" title="点击查询此公式"><span class="fn">'+escapedName+'</span><span class="fv">'+rendered+'</span><span class="f-actions"><button class="f-btn" onclick="event.stopPropagation();copyFormulaLatex(\''+escapedLatex+'\')">复制</button><button class="f-btn" onclick="event.stopPropagation();insertFormulaToInput(\''+escapedLatex+'\')">插入</button></span></div>';
+  }).join('');
+}
+var _popupFormulaLatex='';
+function showFormulaPopup(event,name,latex){
+  var popup=document.getElementById('formula-popup');
+  if(!popup)return;
+  _popupFormulaLatex=decodeHtmlEntities(latex);
+  var innerLatex=_popupFormulaLatex.replace(/^\$\$([\s\S]*)\$\$$/,'$1').trim();
+  popup.querySelector('.popup-title').textContent=decodeHtmlEntities(name);
+  var formulaEl=popup.querySelector('.popup-formula');
+  if(typeof katex!=='undefined'){
+    try{
+      formulaEl.innerHTML=katex.renderToString(innerLatex,{displayMode:true,throwOnError:false,trust:true,strict:false});
+    }catch(e){
+      formulaEl.innerHTML='<code style="color:#e11d48">'+escapeHtml(_popupFormulaLatex)+'</code>';
+    }
+  }else{
+    formulaEl.textContent=_popupFormulaLatex;
+  }
+  popup.querySelector('.popup-latex').textContent=_popupFormulaLatex;
+  popup.style.display='block';
+  var rect=popup.getBoundingClientRect();
+  var x=event.clientX+10,y=event.clientY+10;
+  if(x+rect.width>window.innerWidth-10)x=event.clientX-rect.width-10;
+  if(y+rect.height>window.innerHeight-10)y=event.clientY-rect.height-10;
+  popup.style.left=Math.max(5,x)+'px';
+  popup.style.top=Math.max(5,y)+'px';
+}
+function hideFormulaPopup(){
+  var popup=document.getElementById('formula-popup');
+  if(popup)popup.style.display='none';
+}
+function decodeHtmlEntities(str){
+  var textarea=document.createElement('textarea');
+  textarea.innerHTML=str;
+  return textarea.value;
+}
+function copyFormulaLatex(latex){
+  var realLatex=decodeHtmlEntities(latex);
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(realLatex).then(function(){showToast('LaTeX 已复制到剪贴板')})['catch'](function(){fallbackCopy(realLatex)});
+  }else{fallbackCopy(realLatex)}
+}
+function fallbackCopy(text){
+  var ta=document.createElement('textarea');
+  ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+  document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');showToast('LaTeX 已复制到剪贴板')}catch(e){showToast('复制失败，请手动复制')}
+  document.body.removeChild(ta);
+}
+function insertFormulaToInput(latex){
+  var realLatex=decodeHtmlEntities(latex);
+  if(/^\$\$/.test(realLatex)){
+    var inner=realLatex.replace(/^\$\$([\s\S]*)\$\$$/,'$1').trim();
+    insertFormula('$$','$$');
+    var box=document.getElementById('input-box');
+    var idx=box.value.indexOf('...');
+    if(idx>=0)box.value=box.value.substring(0,idx)+inner+box.value.substring(idx+3);
+  }else{
+    insertFormula('$','$');
+    var box2=document.getElementById('input-box');
+    var idx2=box2.value.indexOf('...');
+    if(idx2>=0)box2.value=box2.value.substring(0,idx2)+realLatex+box2.value.substring(idx2+3);
+  }
+  document.getElementById('input-box').focus();
+  showToast('公式已插入输入框');
 }
 
 // ===== 错题本 =====
@@ -513,8 +723,9 @@ function loadErrorItem(idx){
 function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
 // ===== 主题 =====
-function toggleTheme(){isDark=!isDark;document.body.classList.toggle('dark',isDark);document.getElementById('theme-btn').textContent=isDark?'☀ 浅色':'🌙 深色';localStorage.setItem('theme',isDark?'dark':'light')}
-if(localStorage.getItem('theme')==='dark')toggleTheme();
+function toggleTheme(){isDark=!isDark;document.body.classList.toggle('light',!isDark);document.getElementById('theme-btn').textContent=isDark?'☀ 浅色':'🌙 深色';localStorage.setItem('theme',isDark?'dark':'light')}
+if(localStorage.getItem('theme')==='light'){isDark=false;document.body.classList.add('light');document.getElementById('theme-btn').textContent='🌙 深色'}
+else{isDark=true;document.body.classList.remove('light');document.getElementById('theme-btn').textContent='☀ 浅色'}
 
 // ===== 模型配置 =====
 async function loadProviders(){
@@ -597,18 +808,75 @@ function addMessage(text,sender){
 function addLoading(){let w=document.querySelector('.welcome-card');if(w)w.remove();let row=document.createElement('div');row.className='row ai';row.id='loading-msg';let b=document.createElement('div');b.className='bubble loading-dots';b.textContent='🤔 思考中';let d=document.createElement('span');['.','.','.'].forEach(()=>{let s=document.createElement('span');s.className='dot';s.textContent='.';d.appendChild(s)});b.appendChild(d);row.appendChild(b);chatList.appendChild(row);if(!userScrolledUp)scrollToBottom()}
 function removeLoading(){let e=document.getElementById('loading-msg');if(e) e.remove()}
 function addAiBubble(){let old=document.getElementById('ai-stream');if(old)old.removeAttribute('id');let row=document.createElement('div');row.className='row ai';row.id='ai-stream';let b=document.createElement('div');b.className='bubble';row.appendChild(b);chatList.appendChild(row)}
-function updateAiBubble(text){let row=document.getElementById('ai-stream');if(!row)return;row.querySelector('.bubble').innerHTML=marked.parse(renderLatex(text,false));if(!userScrolledUp)scrollToBottom()}
-function updateAiBubbleFinal(text){let row=document.getElementById('ai-stream');if(!row)return;row.querySelector('.bubble').innerHTML=marked.parse(renderLatex(text,true));if(!userScrolledUp)scrollToBottom()}
+function updateAiBubble(text){
+  _doRender(text,false);
+}
+function _doRender(text,isFinal){
+  var row=document.getElementById('ai-stream');if(!row)return;
+  var rendered=renderLatex(text,isFinal);
+  row.querySelector('.bubble').innerHTML=marked.parse(rendered);
+  if(!userScrolledUp)debounceScroll();
+}
+function updateAiBubbleFinal(text){
+  _doRender(text,true);
+  if(!userScrolledUp)scrollToBottom();
+}
+var _scrollTimer=null;
+function debounceScroll(){
+  if(_scrollTimer)return;
+  _scrollTimer=setTimeout(function(){scrollToBottom();_scrollTimer=null},120);
+}
 function safeText(v){return typeof v==='string'?v:(v===null||v===undefined)?'':String(v)}
 var RENDER_BLOCK_MAX_INLINE_LEN=80; // 短于此长度的 $$ 块在段落中转行内
+
+/** 清洗AI响应中泄漏的KaTeX HTML标签，还原为纯文本 */
+function cleanLeakedHtml(text){
+  text=text.replace(/<span[^>]*class="katex[^"]*"[^>]*>/g,'');
+  text=text.replace(/<\/span>/g,'');
+  text=text.replace(/<math[^>]*>/g,'');
+  text=text.replace(/<\/math>/g,'');
+  text=text.replace(/<semantics>[^<]*<\/semantics>/g,'');
+  text=text.replace(/<annotation[^>]*>[\s\S]*?<\/annotation>/g,'');
+  text=text.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
+  return text;
+}
+
+/** 兜底修复AI流式输出造成的破碎LaTeX */
+function cleanLatexText(rawText){
+  var text=rawText;
+  // 移除非标准换行导致的分数分裂：把 $$ 块内的多余换行合并
+  text=text.replace(/\$\$([\s\S]*?)\$\$/g,function(m,inner){
+    // 公式内部换行 → 保留一个换行（多行公式如align），把连续多个空行压缩
+    var cleaned=inner.replace(/\n{3,}/g,'\n\n').replace(/[ \t]+$/gm,'');
+    // 如果内容不含 \\ 对齐符且不含 \begin，把换行去掉让\frac写一行
+    if(!/\\\\/.test(cleaned)&&!/\\begin/.test(cleaned)){
+      cleaned=cleaned.replace(/\n+/g,' ');
+    }
+    return '$$'+cleaned+'$$';
+  });
+  // 清除AI常输出的零宽字符/不可见字符
+  text=text.replace(/[​‌‍‎‏﻿]/g,'');
+  // 修复下标空格：a 1 → a_1, a n → a_n, a n+1 → a_{n+1}
+  text=text.replace(/\b(a|b|c|x|y|z|S|P|A|B|C|t|r)\s+(\d+)\b/g,'$1_$2');
+  text=text.replace(/\b(a|b|c|x|y|z|S|P|A|B|C|t|r)\s+(n)(\W|$)/g,'$1_n$3');
+  // 修复全角空格
+  text=text.replace(/　/g,' ');
+  // \[...\] → $$...$$（AI可能不听提示词）
+  text=text.replace(/\\\[([\s\S]*?)\\\]/g,'$$$$$1$$$$');
+  text=text.replace(/\\\(([\s\S]*?)\\\)/g,'$$1$');
+  return text;
+}
 
 function renderLatex(text,isFinal){
   text=safeText(text);
   if(typeof katex==='undefined')return text;
+  // 清洗：HTML标签 → 破碎LaTeX修复 → 分隔符统一
+  text=cleanLeakedHtml(text);
+  text=cleanLatexText(text);
 
   // 先处理 $...$ 行内公式（必须在 $$ 之前，避免把 $$ 内容误匹配）
   text=text.replace(/(?<!\$)\$([^\$\n]+?)\$(?!\$)/g,(m,f)=>{
-    try{return katex.renderToString(f.trim(),{displayMode:false,throwOnError:false})}catch(e){return m}
+    try{return katex.renderToString(f.trim(),{displayMode:false,throwOnError:false,trust:true,strict:false})}catch(e){return m}
   });
 
   // 智能处理 $$...$$：短公式在段落中转行内，长公式保持块级
@@ -616,14 +884,14 @@ function renderLatex(text,isFinal){
     var inner=f.trim();
     // 包含换行 → 多行公式，保持块级
     if(/\n/.test(inner)){
-      try{return katex.renderToString(inner,{displayMode:true,throwOnError:false})}catch(e){return m}
+      try{return katex.renderToString(inner,{displayMode:true,throwOnError:false,trust:true,strict:false})}catch(e){return m}
     }
     // 短公式 且 不在独立行 → 渲染为行内
     if(inner.length<RENDER_BLOCK_MAX_INLINE_LEN){
-      try{return katex.renderToString(inner,{displayMode:false,throwOnError:false})}catch(e){return m}
+      try{return katex.renderToString(inner,{displayMode:false,throwOnError:false,trust:true,strict:false})}catch(e){return m}
     }
     // 长公式 → 块级
-    try{return katex.renderToString(inner,{displayMode:true,throwOnError:false})}catch(e){return m}
+    try{return katex.renderToString(inner,{displayMode:true,throwOnError:false,trust:true,strict:false})}catch(e){return m}
   });
 
   // 流式过程中：如果还有未闭合的 $$，临时隐藏
@@ -643,17 +911,16 @@ function renderLatex(text,isFinal){
 
 /** 自动将裸数学表达式包裹为行内 $...$ */
 function autoWrapBareLatex(text){
-  if(/<span[^>]*class="katex/.test(text))return text;
-  // 匹配含 LaTeX 命令的文本片段，用 $ 包裹后行内渲染
+  // 逐个匹配处理，不在顶层检查全文本中是否已有 katex
   text=text.replace(/(\\(?:frac|sqrt|sum|int|lim|infty|pm|mp|times|div|cdot|leq|geq|neq|approx|equiv|sim|partial|nabla|forall|exists|in|notin|subset|subseteq|cup|cap|angle|triangle|alpha|beta|gamma|delta|epsilon|theta|lambda|mu|pi|sigma|omega|mathbf|mathbb|mathcal|bar|hat|vec|dot|widetilde|widehat|overline|underline|operatorname|text|begin|end|left|right)\b[^\n$<>]*)/g,
   function(m){
-    if(/katex|<span|<div/.test(m))return m;
-    try{return katex.renderToString(m.trim(),{displayMode:false,throwOnError:false})}catch(e){return m}
+    if(/<span|<div|class="katex/.test(m))return m;
+    try{return katex.renderToString(m.trim(),{displayMode:false,throwOnError:false,trust:true,strict:false})}catch(e){return m}
   });
   // 导数 f'(x) 模式
   text=text.replace(/([a-zA-Z]\\?'{1,2}\([^)]*\)(?:\s*=\s*[^\n$<>]+)?)/g,function(m){
-    if(/katex|<span/.test(m))return m;
-    try{return katex.renderToString(m.trim(),{displayMode:false,throwOnError:false})}catch(e){return m}
+    if(/<span|<div|class="katex/.test(m))return m;
+    try{return katex.renderToString(m.trim(),{displayMode:false,throwOnError:false,trust:true,strict:false})}catch(e){return m}
   });
   return text;
 }
@@ -677,20 +944,33 @@ async function sendMessage(){
   if(isLoading){stopGeneration();return}
   let text=inputBox.value.trim();if(!text)return;
   if(!currentConfig.apiKey){openSettings();return}
+  // 无会话时自动创建
+  if(!currentDbSessionId){
+    try{
+      let r=await fetch('/api/history/session/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:text,stage:getStage(),modelName:currentConfig.modelName||''})});
+      let d=await r.json();currentDbSessionId=d.sessionId;
+      localStorage.setItem('currentDbSessionId',currentDbSessionId);
+      loadSessionList();
+    }catch(e){}
+  }
   addMessage(text,'user');inputBox.value='';inputBox.style.height='auto';inputBox.focus();
-  addLoading();setLoading(true);let aiText='';lastAiFullText='';favBtn.style.display='none';
+  addLoading();setLoading(true);let aiText="";thinkText="";lastAiFullText="";lastThinkFullText="";favBtn.style.display='none';
   try{
     currentAbort=new AbortController();
-    let body={provider:currentConfig.provider,modelName:currentConfig.modelName,apiKey:currentConfig.apiKey,baseUrl:currentConfig.baseUrl,temperature:currentConfig.temperature||0.2,maxTokens:currentConfig.maxTokens||4096,stage:getStage(),allowUniversityExtend:allowExtend,ragEnabled:ragEnabled,ragTopK:4,messages:[{role:'user',content:text}]};
+    let body={provider:currentConfig.provider,modelName:currentConfig.modelName,apiKey:currentConfig.apiKey,baseUrl:currentConfig.baseUrl,temperature:currentConfig.temperature||0.2,maxTokens:currentConfig.maxTokens||4096,stage:getStage(),allowUniversityExtend:allowExtend,ragEnabled:ragEnabled,ragTopK:4,sessionId:currentDbSessionId,messages:[{role:'user',content:text}]};
     let resp=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:currentAbort.signal});
-    removeLoading();addAiBubble();
+    // 保持loading，等首个答案分片到达再移除
+    var _bubbleReady=false;
     let reader=resp.body.getReader(),decoder=new TextDecoder(),buffer='',currentEvent='',eventLines=[];
     while(true){
       let{done,value}=await reader.read();
       if(done){
         if(currentEvent==='chunk'&&eventLines.length>0){
-          try{let o=JSON.parse(eventLines.join('\n'));if(o.type==='chunk'){aiText+=o.content||'';updateAiBubble(aiText)}else if(o.type==='error'){updateAiBubble('❌ [错误] '+o.errMsg)}}
+          try{let o=JSON.parse(eventLines.join('\n'));if(o.type==='chunk'){if(!_bubbleReady){removeLoading();addAiBubble();_bubbleReady=true};aiText+=o.content||'';_feedSmooth(o.content||'')}else if(o.type==='error'){updateAiBubble('❌ [错误] '+o.errMsg)}}
           catch(e){aiText+=eventLines.join('\n');updateAiBubble(aiText)}
+        }else if(currentEvent==='reasoning'&&eventLines.length>0){
+          try{let o=JSON.parse(eventLines.join('\n'));if(o.reasoning){thinkText+=o.reasoning;updateThinkPanel(thinkText)}}
+          catch(e){}
         }
         break;
       }
@@ -698,15 +978,21 @@ async function sendMessage(){
       for(let line of lines){
         if(line===''){
           if(currentEvent==='chunk'&&eventLines.length>0){
-            try{let o=JSON.parse(eventLines.join('\n'));if(o.type==='chunk'){aiText+=o.content||'';updateAiBubble(aiText)}else if(o.type==='error'){updateAiBubble('❌ [错误] '+o.errMsg)}}
+            try{let o=JSON.parse(eventLines.join('\n'));if(o.type==='chunk'){if(!_bubbleReady){removeLoading();addAiBubble();_bubbleReady=true};aiText+=o.content||'';_feedSmooth(o.content||'')}else if(o.type==='error'){updateAiBubble('❌ [错误] '+o.errMsg)}}
             catch(e){aiText+=eventLines.join('\n');updateAiBubble(aiText)}
+          }else if(currentEvent==='reasoning'&&eventLines.length>0){
+            try{let o=JSON.parse(eventLines.join('\n'));if(o.reasoning){thinkText+=o.reasoning;updateThinkPanel(thinkText)}}
+            catch(e){}
+            var lb=document.getElementById('loading-msg');if(lb)lb.querySelector('.bubble').innerHTML='🧠 深度思考中<span><span class=dot>.</span><span class=dot>.</span><span class=dot>.</span></span>';
           }else if(currentEvent==='finish'){
             setLoading(false);statusEl.textContent='✅ 回答完成';
             lastAiFullText=aiText;favBtn.style.display='block';
             // 流结束：全量渲染一次（自动包裹未标记公式 + 清理未闭合 $$）
-            updateAiBubbleFinal(aiText);
-            try{if(eventLines.length>0){let o=JSON.parse(eventLines.join('\n'));if(o.fullContent)lastAiFullText=o.fullContent}}
+            aiText=_flushSmooth();updateAiBubbleFinal(aiText);
+            try{if(eventLines.length>0){let o=JSON.parse(eventLines.join('\n'));if(o.fullContent)lastAiFullText=o.fullContent;if(o.fullReasoning)lastThinkFullText=o.fullReasoning}}
             catch(e){}
+            // 刷新历史列表（更新时间和标题）
+            if(currentDbSessionId)loadSessionList();
           }
           currentEvent='';eventLines=[];
         }else if(line.startsWith('event:'))currentEvent=line.substring(6).trim();
@@ -718,7 +1004,33 @@ async function sendMessage(){
     else{removeLoading();addAiBubble();updateAiBubble('❌ [错误] '+e.message)}
   }finally{currentAbort=null;setLoading(false);if(statusEl.textContent!=='✅ 回答完成')statusEl.textContent='✅ 就绪'}
 }
-function stopGeneration(){if(currentAbort){currentAbort.abort();currentAbort=null}setLoading(false);statusEl.textContent='⏹ 已停止'}
+function stopGeneration(){if(currentAbort){currentAbort.abort();currentAbort=null}_clearSmoother();setLoading(false);statusEl.textContent='⏹ 已停止'}
+
+// ===== 流式平滑打字机 =====
+var _smoothBuf='',_smoothTimer=null,_smoothText='',_smoothSpeed=25,_smoothStarted=false;
+function _feedSmooth(chunk){
+  _smoothBuf+=chunk;
+  // 首个分片立即展示，消除等待感；后续平滑输出
+  if(!_smoothStarted){_smoothStarted=true;_smoothSpeed=25}
+  if(!_smoothTimer)_smoothTimer=setInterval(_tickSmooth,_smoothSpeed);
+}
+function _tickSmooth(){
+  if(_smoothBuf.length===0){clearInterval(_smoothTimer);_smoothTimer=null;return}
+  // 缓冲区积压超过200字时加速输出，避免越等越多
+  var n=_smoothBuf.length>200?Math.min(10,_smoothBuf.length):Math.min(4,_smoothBuf.length);
+  _smoothText+=_smoothBuf.slice(0,n);
+  _smoothBuf=_smoothBuf.slice(n);
+  _doRender(_smoothText,false);
+}
+function _flushSmooth(){
+  if(_smoothTimer){clearInterval(_smoothTimer);_smoothTimer=null}
+  if(_smoothBuf.length>0){_smoothText+=_smoothBuf;_smoothBuf=''}
+  return _smoothText;
+}
+function _clearSmoother(){
+  if(_smoothTimer){clearInterval(_smoothTimer);_smoothTimer=null}
+  _smoothBuf='';_smoothText='';_smoothStarted=false;
+}
 function quickSend(text){inputBox.value=text;sendMessage()}
 function setLoading(v){isLoading=v;sendBtn.style.display=v?'none':'';stopBtn.style.display=v?'':'none';if(v)statusEl.textContent='🤔 AI思考中...';favBtn.style.display='none'}
 function clearConversation(){
@@ -783,7 +1095,7 @@ function buildWelcomeCard(){
   }else{
     suggestions='<button onclick="quickSend(\'求函数 f(x)=x³-3x 的单调区间和极值\')">导数求单调区间</button><button onclick="quickSend(\'求等差数列的第n项公式及前n项和\')">数列求通项</button><button onclick="quickSend(\'已知椭圆方程，求焦点坐标\')">圆锥曲线</button>';
   }
-  return '<div class="welcome-card"><span class="wicon">📐</span><h2>初高中数学智能辅导体</h2><p>'+getStageLabel(stage)+'模式 · 支持：函数 · 几何 · 导数 · 数列 · 方程 · 证明题<br>多厂商推理模型一键切换 | 公式渲染 | 分步解析'+(allowExtend?' | 🔓大学拓展':'')+'</p><div class="quick-funcs">'+funcs+'</div><div class="suggestions" style="margin-top:18px">'+suggestions+'</div></div>';
+  return '<div class="welcome-card"><div class="wicon-row"><span class="wicon">🎓</span><span class="wbrand">苏巷雨</span></div><h2>智慧教学智能体</h2><p class="wsub">'+getStageLabel(stage)+'模式 · K12数学辅导'+(allowExtend?' · 🔓大学拓展':'')+'</p><p class="wdesc">函数 · 几何 · 导数 · 数列 · 方程 · 证明题<br>多厂商推理模型一键切换 | LaTeX公式实时渲染 | 分步解析</p><div class="quick-funcs">'+funcs+'</div><div class="suggestions" style="margin-top:18px">'+suggestions+'</div></div>';
 }
 
 // ===== 动态快捷栏 =====
@@ -899,6 +1211,29 @@ async function buildKbIncremental(){
     }else{log.innerHTML+='❌ '+result.error+'\n'}
   }catch(e){log.innerHTML+='❌ '+e.message+'\n'}
 }
+async function configMathPix(){
+  let appId=prompt('MathPix App ID (https://mathpix.com/ 注册获取):');
+  if(!appId)return;
+  let appKey=prompt('MathPix App Key:');
+  if(!appKey)return;
+  await fetch('/api/knowledge/mathpix-config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({appId:appId,appKey:appKey})});
+  showToast('MathPix 已配置');
+}
+async function retryFailedWithOcr(){
+  if(!confirm('将使用OCR服务重试所有失败文件。请确保Python OCR服务已启动(127.0.0.1:8001)。继续？'))return;
+  let log=document.getElementById('kb-build-log');log.style.display='block';log.innerHTML='📷 正在OCR重试失败文件...\n';
+  let bar=document.getElementById('kb-progress-bar');bar.style.display='block';
+  let fill=document.getElementById('kb-progress-fill');fill.style.width='10%';
+  try{
+    let dirResp=await fetch('/api/knowledge/dir');let dirData=await dirResp.json();
+    let r=await fetch('/api/knowledge/retry-ocr',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dirPath:dirData.directory})});
+    let result=await r.json();
+    if(result.success){log.innerHTML+='✅ OCR重试完成！新增 '+result.newFiles+' 文件\n';fill.style.width='100%'}
+    else{log.innerHTML+='❌ '+result.error+'\n'}
+    await refreshKbStats();await updateKbStatus();await loadFailedFiles();
+  }catch(e){log.innerHTML+='❌ '+e.message+'\n'}
+  setTimeout(()=>bar.style.display='none',3000);
+}
 async function loadFailedFiles(){
   let list=document.getElementById('kb-failed-list');list.style.display='block';
   try{
@@ -941,9 +1276,220 @@ async function clearKb(){
   renderErrorBook();
   updateQuickBar();
   updatePlaceholder();
+  // 加载历史会话列表
+  loadSessionList();
   // 加载模型与会话
   loadProviders().then(()=>initSession());
   updateKbStatus();
   inputBox.focus();
 })();
+
+// ===== 对话历史管理 =====
+function loadSessionList(){
+  fetch('/api/history/sessions?page=0&size=50')
+    .then(function(r){return r.json()})
+    .then(function(sessions){
+      renderSessionList(sessions||[]);
+    })['catch'](function(e){
+      // 加载失败不覆盖已有列表
+    });
+}
+
+function renderSessionList(sessions){
+  var list=document.getElementById('history-list');
+  if(!sessions||!sessions.length){
+    list.innerHTML='<div class="empty-hint">📭 暂无历史对话<br><span style="font-size:10px">发送第一条消息自动保存</span></div>';
+    return;
+  }
+  list.innerHTML=sessions.map(function(s){
+    var title=escapeHtml(s.title||'新对话');
+    var time=s.updateTime?s.updateTime.substring(0,16):'';
+    var active=s.sessionId===currentDbSessionId?' active':'';
+    return'<div class="history-item'+active+'" onclick="switchSession('+s.sessionId+')" title="'+title+'">'
+      +'<span class="hdel" onclick="event.stopPropagation();deleteSession('+s.sessionId+')">✕</span>'
+      +'<div class="htitle">'+title+'</div>'
+      +'<div class="htime">'+time+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function createNewSession(){
+  // 清空聊天区 + 清空内存会话（避免旧消息污染新对话）
+  stopGeneration();
+  fetch('/api/chat',{method:'DELETE'});
+  document.getElementById('chat-list').innerHTML=buildWelcomeCard();
+  lastAiFullText='';lastThinkFullText='';hideFormulaPopup();
+  // 再异步创建数据库会话
+  fetch('/api/history/session/create',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({title:'新对话',stage:getStage(),modelName:currentConfig.modelName||''})
+  }).then(function(r){return r.json()}).then(function(data){
+    currentDbSessionId=data.sessionId;
+    localStorage.setItem('currentDbSessionId',currentDbSessionId);
+    loadSessionList();
+    showToast('✅ 新对话已创建');
+  })['catch'](function(e){
+    showToast('创建失败，请重试');
+  });
+}
+
+function switchSession(sessionId){
+  // 先切换ID和高亮
+  currentDbSessionId=sessionId;
+  localStorage.setItem('currentDbSessionId',sessionId);
+  loadSessionList();
+  // 加载历史消息
+  document.getElementById('chat-list').innerHTML='<div class="empty-hint">⏳ 加载中...</div>';
+  fetch('/api/history/messages/'+sessionId)
+    .then(function(r){return r.json()})
+    .then(function(msgs){
+      var chatList=document.getElementById('chat-list');
+      chatList.innerHTML='';
+      if(!msgs||!msgs.length){
+        chatList.innerHTML=buildWelcomeCard();
+        return;
+      }
+      msgs.forEach(function(m){
+        if(m.role==='user')addMessage(m.content,'user');
+        else if(m.role==='assistant')addMessage(m.content,'ai',m.thinkRaw||null);
+      });
+      scrollToBottom();
+    })['catch'](function(e){
+      document.getElementById('chat-list').innerHTML=buildWelcomeCard();
+      showToast('加载失败');
+    });
+}
+
+function deleteSession(sessionId){
+  if(!confirm('确定删除此对话？'))return;
+  fetch('/api/history/session/'+sessionId,{method:'DELETE'})
+    .then(function(){
+      if(currentDbSessionId===sessionId){
+        currentDbSessionId=null;
+        localStorage.removeItem('currentDbSessionId');
+        document.getElementById('chat-list').innerHTML=buildWelcomeCard();
+      }
+      loadSessionList();
+      showToast('已删除');
+    })['catch'](function(e){
+      showToast('删除失败');
+    });
+}
+
+// 恢复上次会话
+(function(){
+  var saved=localStorage.getItem('currentDbSessionId');
+  if(saved)currentDbSessionId=parseInt(saved);
+})();
+
+// ===== 鼠标跟随柔光 =====
+document.addEventListener('mousemove',function(e){
+  document.body.style.setProperty('--mx',e.clientX+'px');
+  document.body.style.setProperty('--my',e.clientY+'px');
+});
+
+// ===== 星空粒子背景 =====
+(function(){
+  var c=document.getElementById('particle-canvas');
+  if(!c)return;
+  var ctx=c.getContext('2d');
+  var stars=[],STAR_COUNT=80;
+  function resize(){c.width=window.innerWidth;c.height=window.innerHeight}
+  resize();window.addEventListener('resize',resize);
+  for(var i=0;i<STAR_COUNT;i++){
+    stars.push({
+      x:Math.random()*c.width,y:Math.random()*c.height,
+      r:Math.random()*1.6+.4,
+      speed:Math.random()*.3+.1,
+      opacity:Math.random()*.5+.3,
+      twinkle:Math.random()*Math.PI*2
+    });
+  }
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    for(var i=0;i<stars.length;i++){
+      var s=stars[i];
+      s.twinkle+=.02;
+      var alpha=s.opacity+.15*Math.sin(s.twinkle);
+      s.y-=s.speed;
+      if(s.y<-5){s.y=c.height+5;s.x=Math.random()*c.width}
+      ctx.beginPath();
+      ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+      ctx.fillStyle='rgba(180,160,255,'+Math.max(0,Math.min(1,alpha))+')';
+      ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ===== 思考过程面板 =====
+var _origAddAiBubble=addAiBubble;
+addAiBubble=function(){
+  _origAddAiBubble();
+  var row=document.getElementById('ai-stream');
+  if(!row)return;
+  var b=row.querySelector('.bubble');
+  // 注入思考面板DOM
+  b.innerHTML='<div class="think-toggle-bar" id="think-toggle-bar" style="display:none"><button class="toggle-think-btn" onclick="toggleThink()">📝 查看AI推理过程</button></div><div class="think-collapse collapse-wrap" id="think-panel"><div class="think-block"><div class="think-title">🧠 AI推理草稿</div><div class="think-content" id="think-content"></div></div></div><div class="answer-block" id="answer-block">'+b.innerHTML+'</div>';
+};
+
+function updateThinkPanel(text){
+  var bar=document.getElementById('think-toggle-bar');
+  var content=document.getElementById('think-content');
+  if(bar)bar.style.display=text?'':'none';
+  if(content)content.textContent=text;
+}
+
+function toggleThink(){
+  var panel=document.getElementById('think-panel');
+  var btn=document.querySelector('.toggle-think-btn');
+  if(!panel||!btn)return;
+  var isOpen=panel.classList.toggle('open');
+  btn.textContent=isOpen?'📝 收起推理过程':'📝 查看AI推理过程';
+  // 首次展开时渲染公式
+  if(isOpen){
+    var tc=document.getElementById('think-content');
+    if(tc&&tc.textContent){
+      tc.innerHTML=marked.parse(renderLatex(tc.textContent,true));
+    }
+  }
+  // 持久化状态
+  try{
+    var state=JSON.parse(localStorage.getItem('thinkStates')||'{}');
+    state[currentDbSessionId||'default']=isOpen;
+    localStorage.setItem('thinkStates',JSON.stringify(state));
+  }catch(e){}
+}
+
+// 恢复上次展开状态
+(function(){
+  try{
+    var state=JSON.parse(localStorage.getItem('thinkStates')||'{}');
+    var key=currentDbSessionId||'default';
+    if(state[key]){
+      setTimeout(function(){
+        var panel=document.getElementById('think-panel');
+        var btn=document.querySelector('.toggle-think-btn');
+        if(panel&&btn){panel.classList.add('open');btn.textContent='📝 收起推理过程';}
+      },300);
+    }
+  }catch(e){}
+})();
+
+// 加载历史消息时附带思考内容
+var _origAddMessage=addMessage;
+addMessage=function(text,sender,thinkRaw){
+  _origAddMessage(text,sender);
+  if(sender==='ai'&&thinkRaw){
+    var bubbles=document.querySelectorAll('.row.ai .bubble');
+    var lastB=bubbles[bubbles.length-1];
+    if(lastB&&!lastB.querySelector('.think-toggle-bar')){
+      var origHtml=lastB.innerHTML;
+      lastB.innerHTML='<div class="think-toggle-bar"><button class="toggle-think-btn" onclick="toggleThink()">📝 查看AI推理过程</button></div><div class="think-collapse collapse-wrap open"><div class="think-block"><div class="think-title">🧠 AI推理草稿</div><div class="think-content">'+escapeHtml(thinkRaw)+'</div></div></div><div class="answer-block">'+origHtml+'</div>';
+    }
+  }
+};
+
 </script></body></html>

@@ -1,5 +1,6 @@
 package com.chatbot;
 
+import com.chatbot.history.ChatHistoryService;
 import com.chatbot.model.UnifiedChatRequest;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -8,7 +9,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.util.*;
 
 /**
- * 多厂商统一 SSE 控制器
+ * 多厂商统一 SSE 控制器 + 对话历史管理
  *
  * @author suxiangyu
  */
@@ -17,12 +18,14 @@ import java.util.*;
 public class ChatController {
 
     private final ChatService chatService;
+    private final ChatHistoryService historyService;
 
-    public ChatController(ChatService chatService) {
+    public ChatController(ChatService chatService, ChatHistoryService historyService) {
         this.chatService = chatService;
+        this.historyService = historyService;
     }
 
-    /** 统一 SSE 流式聊天 */
+    /** 统一 SSE 流式聊天（支持数据库会话持久化） */
     @PostMapping(value = "/chat",
             produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter chat(
@@ -30,10 +33,12 @@ public class ChatController {
             @CookieValue(value = "sid", defaultValue = "") String sid) {
         String sessionId = sid.isBlank()
                 ? chatService.createSession() : sid;
-        return chatService.chat(sessionId, req);
+        // 前端传来的数据库会话ID
+        Long dbSessionId = req.getSessionId();
+        return chatService.chat(sessionId, dbSessionId, req);
     }
 
-    /** 获取会话历史 */
+    /** 获取内存会话历史 */
     @GetMapping("/history")
     public List<ChatMessage> history(
             @CookieValue(value = "sid", defaultValue = "") String sid) {
@@ -53,6 +58,46 @@ public class ChatController {
     @GetMapping("/session")
     public Map<String, String> session() {
         return Map.of("sid", chatService.createSession());
+    }
+
+    // ========== 对话历史持久化接口 ==========
+
+    /** 创建数据库会话 */
+    @PostMapping("/history/session/create")
+    public Map<String, Object> createDbSession(@RequestBody Map<String, String> body) {
+        Long id = historyService.createSession(
+                body.get("title"), body.get("stage"), body.get("modelName"));
+        return Map.of("sessionId", id);
+    }
+
+    /** 查询历史会话列表 */
+    @GetMapping("/history/sessions")
+    public List<Map<String, Object>> listSessions(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return historyService.listSessions(page, size);
+    }
+
+    /** 删除会话（逻辑删除） */
+    @DeleteMapping("/history/session/{sessionId}")
+    public Map<String, String> deleteSession(@PathVariable Long sessionId) {
+        historyService.deleteSession(sessionId);
+        return Map.of("status", "ok");
+    }
+
+    /** 重命名会话 */
+    @PutMapping("/history/session/rename")
+    public Map<String, String> renameSession(@RequestBody Map<String, Object> body) {
+        Long id = Long.valueOf(body.get("sessionId").toString());
+        String title = (String) body.get("title");
+        historyService.renameSession(id, title);
+        return Map.of("status", "ok");
+    }
+
+    /** 获取会话全部消息 */
+    @GetMapping("/history/messages/{sessionId}")
+    public List<Map<String, String>> getMessages(@PathVariable Long sessionId) {
+        return historyService.getMessages(sessionId);
     }
 
     /** 获取所有厂商 + 模型列表 */

@@ -50,6 +50,8 @@ public class UnifiedChatRequest {
     private boolean ragEnabled;
     /** RAG 检索数量 */
     private int ragTopK = 4;
+    /** 数据库会话ID（持久化用） */
+    private Long sessionId;
 
     public String getProvider() { return provider; }
     public void setProvider(String v) { provider = v; }
@@ -73,6 +75,8 @@ public class UnifiedChatRequest {
     public void setRagEnabled(boolean v) { ragEnabled = v; }
     public int getRagTopK() { return ragTopK; }
     public void setRagTopK(int v) { ragTopK = v; }
+    public Long getSessionId() { return sessionId; }
+    public void setSessionId(Long v) { sessionId = v; }
 
     /** @deprecated 使用 getStage() */
     @Deprecated

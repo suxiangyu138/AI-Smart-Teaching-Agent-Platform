@@ -129,6 +129,16 @@ public class MathChunkingStrategy {
                 chunk.setStage(detectedGrade);
                 chunk.setKnowledgePoint(knowledgePoint);
                 chunk.setQuestionType(detectQuestionType(content));
+                // 自动设置权重 + 来源类型
+                chunk.setSourceType(detectSourceType(sourceFile, content));
+                chunk.setWeight(getDefaultWeight(chunk.getSourceType(), detectedGrade));
+                chunk.setSourceName(sourceFile);
+                // 公式元数据提取
+                chunk.setHasFormula(
+                        com.chatbot.rag.crawler.FormulaNormalizer.hasLatexCommands(content)
+                        || com.chatbot.rag.crawler.FormulaNormalizer.countFormulaBlocks(content) > 0);
+                chunk.setFormulaCount(
+                        com.chatbot.rag.crawler.FormulaNormalizer.countFormulaBlocks(content));
                 chunks.add(chunk);
 
                 sectionOffset += Math.max(0, content.length() - CHUNK_OVERLAP);
@@ -289,6 +299,43 @@ public class MathChunkingStrategy {
             }
         }
         return "综合";
+    }
+
+    /** 检测来源类型 */
+    String detectSourceType(String fileName, String text) {
+        String lower = (fileName + " " + text).toLowerCase();
+        if (lower.contains("教材") || lower.contains("课本") || lower.contains("textbook")) {
+            return "textbook";
+        }
+        if (lower.contains("试卷") || lower.contains("真题") || lower.contains("考试")
+                || lower.contains("期中") || lower.contains("期末") || lower.contains("高考")
+                || lower.contains("中考") || lower.contains("exam")) {
+            return "exam";
+        }
+        if (lower.contains("讲义") || lower.contains("课件") || lower.contains("lecture")) {
+            return "lecture";
+        }
+        if (lower.contains("竞赛") || lower.contains("奥数") || lower.contains("联赛")) {
+            return "lecture";
+        }
+        return "textbook";
+    }
+
+    /** 按来源类型和学段获取默认权重 */
+    double getDefaultWeight(String sourceType, String stage) {
+        if ("textbook".equals(sourceType)) {
+            return 1.0;
+        }
+        if ("exam".equals(sourceType)) {
+            return 0.85;
+        }
+        if ("lecture".equals(sourceType)) {
+            return 0.7;
+        }
+        if (UnifiedChatRequest.STAGE_UNIVERSITY.equals(stage)) {
+            return 0.4;
+        }
+        return 0.6;
     }
 
     /**

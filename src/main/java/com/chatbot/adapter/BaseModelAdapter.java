@@ -95,6 +95,7 @@ public abstract class BaseModelAdapter {
                 }
 
                 StringBuilder full = new StringBuilder();
+                StringBuilder fullThink = new StringBuilder();
                 try (BufferedReader r = new BufferedReader(
                         new InputStreamReader(resp.body(),
                                 StandardCharsets.UTF_8))) {
@@ -106,14 +107,18 @@ public abstract class BaseModelAdapter {
                                 break;
                             }
                             try {
+                                // 分别提取思考过程和最终回答
+                                String reasoning = extractReasoning(d);
+                                if (reasoning != null && !reasoning.isEmpty()) {
+                                    fullThink.append(reasoning);
+                                    onChunk.accept(UnifiedStreamChunk.reasoning(
+                                            reasoning, fullThink.toString()));
+                                }
                                 String content = extractContent(d);
-                                if (content != null
-                                        && !content.isEmpty()) {
+                                if (content != null && !content.isEmpty()) {
                                     full.append(content);
-                                    onChunk.accept(
-                                            UnifiedStreamChunk.chunk(
-                                                    content,
-                                                    full.toString()));
+                                    onChunk.accept(UnifiedStreamChunk.chunk(
+                                            content, full.toString()));
                                 }
                             } catch (Exception ignored) {
                                 // 跳过非 JSON 行
@@ -135,22 +140,31 @@ public abstract class BaseModelAdapter {
         return "https://api.deepseek.com/v1/chat/completions";
     }
 
-    /** 从 SSE data JSON 提取 content 字段（兼容推理模型的 reasoning_content） */
+    /** 从 SSE data JSON 提取 content（最终回答） */
     protected String extractContent(String data) throws Exception {
         var n = MAPPER.readTree(data);
         var choices = n.get("choices");
         if (choices != null && choices.isArray() && !choices.isEmpty()) {
             var delta = choices.get(0).get("delta");
             if (delta != null) {
-                // 优先取 content（最终回答），若为空则取 reasoning_content（推理过程）
                 var c = delta.get("content");
-                if (c != null && !c.isNull()
-                        && !c.asText().isEmpty()) {
+                if (c != null && !c.isNull() && !c.asText().isEmpty()) {
                     return c.asText();
                 }
+            }
+        }
+        return null;
+    }
+
+    /** 从 SSE data JSON 提取 reasoning_content（思考/推理过程） */
+    protected String extractReasoning(String data) throws Exception {
+        var n = MAPPER.readTree(data);
+        var choices = n.get("choices");
+        if (choices != null && choices.isArray() && !choices.isEmpty()) {
+            var delta = choices.get(0).get("delta");
+            if (delta != null) {
                 var rc = delta.get("reasoning_content");
-                if (rc != null && !rc.isNull()
-                        && !rc.asText().isEmpty()) {
+                if (rc != null && !rc.isNull() && !rc.asText().isEmpty()) {
                     return rc.asText();
                 }
             }

@@ -15,6 +15,12 @@ public class VectorDocument {
     private String chapterTitle;
     private String knowledgePoint;
     private String questionType;
+    private double weight = 1.0;
+    private String sourceType;
+    private String sourceName;
+    private Integer pageNum;
+    private boolean hasFormula;
+    private int formulaCount;
 
     public VectorDocument() {}
 
@@ -41,4 +47,16 @@ public class VectorDocument {
 
     public String getQuestionType() { return questionType; }
     public void setQuestionType(String v) { questionType = v; }
+    public double getWeight() { return weight; }
+    public void setWeight(double v) { weight = v; }
+    public String getSourceType() { return sourceType; }
+    public void setSourceType(String v) { sourceType = v; }
+    public String getSourceName() { return sourceName; }
+    public void setSourceName(String v) { sourceName = v; }
+    public Integer getPageNum() { return pageNum; }
+    public void setPageNum(Integer v) { pageNum = v; }
+    public boolean isHasFormula() { return hasFormula; }
+    public void setHasFormula(boolean v) { hasFormula = v; }
+    public int getFormulaCount() { return formulaCount; }
+    public void setFormulaCount(int v) { formulaCount = v; }
 }

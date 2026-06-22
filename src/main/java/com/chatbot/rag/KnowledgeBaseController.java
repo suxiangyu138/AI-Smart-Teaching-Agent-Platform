@@ -1,6 +1,8 @@
 package com.chatbot.rag;
 
 import com.chatbot.model.UnifiedChatRequest;
+import com.chatbot.rag.document.MathPixClient;
+import com.chatbot.rag.document.ScanOcrClient;
 import com.chatbot.rag.model.KnowledgeBaseStats;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -21,9 +23,37 @@ import java.util.stream.Collectors;
 public class KnowledgeBaseController {
 
     private final RagService ragService;
+    private final ScanOcrClient ocrClient;
+    private final MathPixClient mathPixClient;
 
-    public KnowledgeBaseController(RagService ragService) {
+    public KnowledgeBaseController(RagService ragService, ScanOcrClient ocrClient,
+                                    MathPixClient mathPixClient) {
         this.ragService = ragService;
+        this.ocrClient = ocrClient;
+        this.mathPixClient = mathPixClient;
+    }
+
+    /** OCR 服务诊断 */
+    @GetMapping("/ocr-status")
+    public Map<String, Object> getOcrStatus() {
+        boolean paddleAvailable = ocrClient.isAvailable();
+        boolean mathPixAvailable = mathPixClient.isAvailable();
+        return Map.of("paddleOcr", paddleAvailable,
+                "mathPix", mathPixAvailable,
+                "message", mathPixAvailable ? "MathPix 就绪"
+                        : paddleAvailable ? "PaddleOCR 就绪" : "无可用 OCR");
+    }
+
+    /** 配置 MathPix API Key */
+    @PostMapping("/mathpix-config")
+    public Map<String, Object> configMathPix(@RequestBody Map<String, String> body) {
+        String appId = body.get("appId");
+        String appKey = body.get("appKey");
+        if (appId == null || appKey == null || appId.isBlank() || appKey.isBlank()) {
+            return Map.of("success", false, "error", "缺少 appId 或 appKey");
+        }
+        mathPixClient.configure(appId, appKey);
+        return Map.of("success", true, "message", "MathPix 已配置");
     }
 
     /**
@@ -266,6 +296,40 @@ public class KnowledgeBaseController {
     }
 
     /**
+     * OCR 重试所有失败文件（需 Python OCR 服务运行中）
+     */
+    @PostMapping("/retry-ocr")
+    public Map<String, Object> retryOcr(@RequestBody Map<String, String> body) {
+        String dirPath = body.get("dirPath");
+        if (dirPath == null || dirPath.isBlank()) {
+            return error("缺少 dirPath 参数");
+        }
+        Path path = Path.of(dirPath);
+        if (!Files.isDirectory(path)) {
+            return error("目录不存在: " + dirPath);
+        }
+        String stage = body.get("stage");
+        if (stage == null) {
+            stage = detectStageFromPath(path);
+        }
+
+        // 先清空失败记录，让断点逻辑允许重试
+        ragService.resetCheckpoint();
+
+        try {
+            Map<String, Integer> stats = ragService.indexDirectory(
+                    path, stage, body.get("apiKey"), body.get("baseUrl"));
+            long newCount = stats.values().stream().filter(v -> v > 0).count();
+            long stillFailed = stats.values().stream().filter(v -> v < 0).count();
+            return Map.of("success", true, "directory", dirPath,
+                    "newFiles", newCount, "stillFailed", stillFailed,
+                    "details", stats);
+        } catch (Exception e) {
+            return error("OCR 重试失败: " + e.getMessage());
+        }
+    }
+
+    /**
      * 删除指定文档的索引
      */
     @DeleteMapping("/document")
@@ -276,6 +340,23 @@ public class KnowledgeBaseController {
         }
         ragService.removeDocument(fileName);
         return Map.of("success", true, "message", "已删除索引: " + fileName);
+    }
+
+    /**
+     * 批量重新标准化公式：检测所有文档中的裸 LaTeX 命令，
+     * 包裹为 $$...$$，更新公式元数据。
+     */
+    @PostMapping("/restandardize")
+    public Map<String, Object> restandardizeFormulas() {
+        return ragService.restandardizeFormulas();
+    }
+
+    /**
+     * 获取公式统计信息
+     */
+    @GetMapping("/formula-stats")
+    public Map<String, Object> getFormulaStats() {
+        return ragService.getFormulaStats();
     }
 
     /**

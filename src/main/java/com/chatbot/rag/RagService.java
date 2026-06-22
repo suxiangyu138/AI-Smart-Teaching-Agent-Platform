@@ -236,16 +236,20 @@ public class RagService {
         String stage = req.getStage() != null ? req.getStage() : UnifiedChatRequest.STAGE_JUNIOR;
         boolean allowExtend = req.isAllowUniversityExtend();
 
+        // 查询语义增强：追加学段限定词
+        String enhancedQuery = vectorStore.enhanceQuery(userQuery, stage);
+
         List<SearchResult> results;
         if (req.getApiKey() != null && !req.getApiKey().isBlank()) {
             try {
-                float[] qEmb = embeddingService.embedCloud(userQuery, req.getApiKey(), req.getBaseUrl());
-                results = vectorStore.search(qEmb, topK, stage, allowExtend);
+                float[] qEmb = embeddingService.embedCloud(enhancedQuery, req.getApiKey(), req.getBaseUrl());
+                // 多路召回：向量 + 关键词 + 标签
+                results = vectorStore.searchMultiRecall(qEmb, enhancedQuery, topK, stage, allowExtend);
             } catch (Exception e) {
-                results = vectorStore.keywordSearch(userQuery, topK, stage, allowExtend);
+                results = vectorStore.searchMultiRecall(null, enhancedQuery, topK, stage, allowExtend);
             }
         } else {
-            results = vectorStore.keywordSearch(userQuery, topK, stage, allowExtend);
+            results = vectorStore.searchMultiRecall(null, enhancedQuery, topK, stage, allowExtend);
         }
 
         results = results.stream().filter(r -> r.getScore() > 0).collect(Collectors.toList());
@@ -253,22 +257,60 @@ public class RagService {
             return "";
         }
 
+        // 按权重和得分排序
+        results.sort((a, b) -> {
+            double aScore = a.getScore() * (a.getChunk().getWeight() > 0 ? a.getChunk().getWeight() : 1);
+            double bScore = b.getScore() * (b.getChunk().getWeight() > 0 ? b.getChunk().getWeight() : 1);
+            return Double.compare(bScore, aScore);
+        });
+
         StringBuilder ctx = new StringBuilder();
         ctx.append("\n\n---\n");
-        ctx.append("【知识库参考资料】以下是从教材/题库中检索到的相关内容，请优先参考：\n\n");
+        ctx.append("【以下为对应学段官方教材、教辅参考资料】\n");
+        ctx.append("解题必须严格依据下面内容，禁止编造定理、公式、解题步骤。\n\n");
+
         for (int i = 0; i < results.size(); i++) {
             SearchResult r = results.get(i);
             String chunkStage = r.getChunk().getStage() != null ? r.getChunk().getStage() : "unknown";
             ctx.append("📖 参考").append(i + 1).append(" ");
             ctx.append(buildStageLabel(chunkStage)).append(" ");
+
+            // 来源类型标签
+            String srcType = r.getChunk().getSourceType();
+            if ("textbook".equals(srcType)) {
+                ctx.append("📘教材 ");
+            } else if ("exam".equals(srcType)) {
+                ctx.append("📝真题 ");
+            } else if ("crawl".equals(srcType)) {
+                ctx.append("🌐网络 ");
+            }
+
             if (r.getChunk().getChapterTitle() != null && !r.getChunk().getChapterTitle().isEmpty()) {
                 ctx.append("（").append(r.getChunk().getChapterTitle()).append("）");
             }
-            ctx.append(" [来源: ").append(r.getSourceFile()).append("]");
-            ctx.append(" [匹配度: ").append(String.format("%.0f%%", r.getScore() * 100)).append("]\n");
-            ctx.append(r.getChunk().getContent()).append("\n\n");
+
+            // 溯源：文件名/书名 + 页码
+            ctx.append("[");
+            if (r.getChunk().getSourceName() != null && !r.getChunk().getSourceName().isEmpty()) {
+                ctx.append(r.getChunk().getSourceName());
+            } else {
+                ctx.append(r.getSourceFile());
+            }
+            if (r.getChunk().getPageNum() != null) {
+                ctx.append(" P").append(r.getChunk().getPageNum());
+            }
+            ctx.append("]");
+            ctx.append(" [得分: ").append(String.format("%.0f%%", r.getScore() * 100)).append("]\n");
+            // 安全兜底：若内容含裸 LaTeX 命令，自动包裹 $$...$$
+            String chunkContent = r.getChunk().getContent();
+            if (com.chatbot.rag.crawler.FormulaNormalizer.hasLatexCommands(chunkContent)) {
+                chunkContent = com.chatbot.rag.crawler.FormulaNormalizer.normalizeBatch(chunkContent);
+            }
+            ctx.append(chunkContent).append("\n\n");
         }
-        ctx.append("请基于以上教材内容，结合你的数学知识，回答用户问题。如果引用教材原文，请标注出处。\n---\n");
+
+        ctx.append("请基于以上教材内容，结合数学知识回答。用到的定理/公式标注出处。");
+        ctx.append("若无相关知识库内容，如实告知「暂无此知识点资料」。\n---\n");
         return ctx.toString();
     }
 
@@ -282,6 +324,34 @@ public class RagService {
 
     private String buildStageLabel(String stage) {
         return STAGE_LABELS.getOrDefault(stage, "");
+    }
+
+    // ================================
+    //  公式标准化与统计
+    // ================================
+
+    /**
+     * 批量重新标准化所有文档中的公式格式。
+     * 检测裸 LaTeX 命令，包裹为 $$...$$，更新元数据并持久化。
+     */
+    public Map<String, Object> restandardizeFormulas() {
+        return vectorStore.normalizeFormulas();
+    }
+
+    /**
+     * 获取公式统计信息
+     */
+    public Map<String, Object> getFormulaStats() {
+        long totalDocs = vectorStore.size();
+        long withFormulas = vectorStore.countDocumentsWithFormulas();
+        long totalBlocks = vectorStore.countTotalFormulaBlocks();
+        Map<String, Object> stats = new java.util.LinkedHashMap<>();
+        stats.put("totalDocuments", totalDocs);
+        stats.put("documentsWithFormulas", withFormulas);
+        stats.put("totalFormulaBlocks", totalBlocks);
+        stats.put("hasFormulaRatio", totalDocs > 0
+                ? String.format("%.1f%%", (double) withFormulas / totalDocs * 100) : "0.0%");
+        return stats;
     }
 
     // ================================
