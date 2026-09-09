@@ -96,6 +96,13 @@ public class EmbeddingService {
             vector[hash] += NGRAM_WEIGHT;
         }
 
+        // 三元组特征：对中文词边界更敏感，提升本地向量区分度
+        for (int i = 0; i < normalized.length() - 2; i++) {
+            int hash = Math.abs((normalized.charAt(i) * 961 + normalized.charAt(i + 1) * 31
+                    + normalized.charAt(i + 2)) % LOCAL_EMBEDDING_DIM);
+            vector[hash] += NGRAM_WEIGHT;
+        }
+
         String[] words = normalized.split("[\\s，。；：！？、\\(\\)\\[\\]{}]+");
         for (String word : words) {
             if (word.length() >= 2) {

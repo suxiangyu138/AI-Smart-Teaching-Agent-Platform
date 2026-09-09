@@ -1,13 +1,4 @@
-<p align="center">
-  <img src="https://img.shields.io/badge/Java-25-ED8B00?logo=openjdk&logoColor=white" alt="Java 25"/>
-  <img src="https://img.shields.io/badge/Spring_Boot-3.5.15-6DB33F?logo=springboot&logoColor=white" alt="Spring Boot 3.5.15"/>
-  <img src="https://img.shields.io/badge/Maven-3.9-C71A36?logo=apachemaven&logoColor=white" alt="Maven"/>
-  <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License MIT"/>
-  <img src="https://img.shields.io/badge/DB-H2-blue?logo=h2&logoColor=white" alt="H2"/>
-  <img src="https://img.shields.io/badge/Math-KaTeX-5f5f5f?logo=katex&logoColor=white" alt="KaTeX"/>
-</p>
-
-<h1 align="center">🎓 苏巷雨 · 智慧教学智能体</h1>
+<h1 align="center">苏巷雨 · 智慧教学智能体</h1>
 
 <p align="center"><strong>K12+大学 数学 RAG 智能辅导平台 — 多模型聚合 · 深空玻璃拟态 · 对话历史 · 思考可视化</strong></p>
 <p align="center">6 家大模型 · 四层学段适配 · PDF 知识库 · LaTeX 渲染 · 流式平滑输出 · 思考过程折叠</p>
@@ -36,19 +27,19 @@
 
 | 特性 | 说明 |
 |------|------|
-| 🎨 深空玻璃拟态 UI | 渐变星空背景 · 毛玻璃卡片 · 粒子动效 · 鼠标跟随柔光 · 流光边框 |
-| 🎓 四层学段 | 小学→初中→高中→大学拓展，精准难度匹配 |
-| 💬 对话历史 | H2 持久化 · 会话列表 · 一键切换 · 自动标题 · 软删除 |
-| 🧠 思考可视化 | 推理过程自动隐藏 · 点击展开/折叠 · 状态持久化 |
-| ⚡ 流式平滑输出 | 缓冲队列 + 匀速打字机 · 智能加速 · 不再蹦字 |
-| 📚 RAG 知识库 | PDF→数学分块→向量检索→上下文增强 |
-| 🤖 多厂商聚合 | DeepSeek / Kimi / Qwen / GLM / MiniMax / MiMo |
-| 📐 公式渲染 | KaTeX + amsmath · trust 模式 · 裸 LaTeX 自动包裹 · 破碎公式修复 |
-| 🌐 网页爬虫 | BFS 爬虫 + Playwright 渲染 + FormulaNormalizer 公式标准化 |
-| 📷 OCR 识别 | PaddleOCR + Pix2Tex + MathPix 三通道 · 扫描版 PDF 支持 |
-| 📝 错题本 | LocalStorage 持久化 · 按学段分类 |
-| 🔐 API Key 本地 | 浏览器 localStorage，不上传服务端 |
-| 🛡 限流保护 | 30 次/分钟/IP |
+| 深空玻璃拟态 UI | 渐变星空背景 · 毛玻璃卡片 · 粒子动效 · 鼠标跟随柔光 · 流光边框 |
+| 四层学段 | 小学→初中→高中→大学拓展，精准难度匹配 |
+| 对话历史 | H2 持久化 · 会话列表 · 一键切换 · 自动标题 · 软删除 |
+| 思考可视化 | 推理过程自动隐藏 · 点击展开/折叠 · 状态持久化 |
+| 流式平滑输出 | 缓冲队列 + 匀速打字机 · 智能加速 · 不再蹦字 |
+| RAG 知识库 | PDF→数学分块→向量检索→上下文增强 |
+| 多厂商聚合 | DeepSeek / Kimi / Qwen / GLM / MiniMax / MiMo |
+| 公式渲染 | KaTeX + amsmath · trust 模式 · 裸 LaTeX 自动包裹 · 破碎公式修复 |
+| 网页爬虫 | BFS 爬虫 + Playwright 渲染 + FormulaNormalizer 公式标准化 |
+| OCR 识别 | PaddleOCR + Pix2Tex + MathPix 三通道 · 扫描版 PDF 支持 |
+| 错题本 | LocalStorage 持久化 · 按学段分类 |
+| API Key 本地 | 浏览器 localStorage，不上传服务端 |
+| 限流保护 | 30 次/分钟/IP |
 
 ---
 
@@ -56,10 +47,10 @@
 
 | 学段 | Stage | 知识范围 | Temperature |
 |------|-------|---------|-------------|
-| 🏫 小学 | `primary` | 算术、四则运算、分数小数、几何图形、应用题 | 0.1 |
-| 🏫 初中 | `junior` | 函数、几何、三角、不等式、概率统计 | 0.15 |
-| 🎓 高中 | `senior` | 导数、圆锥曲线、数列、立体几何、排列组合 | 0.2 |
-| 📚 大学拓展 | `university` | 微积分进阶、线性代数、离散数学、竞赛 | 0.3 |
+| 小学 | `primary` | 算术、四则运算、分数小数、几何图形、应用题 | 0.1 |
+| 初中 | `junior` | 函数、几何、三角、不等式、概率统计 | 0.15 |
+| 高中 | `senior` | 导数、圆锥曲线、数列、立体几何、排列组合 | 0.2 |
+| 大学拓展 | `university` | 微积分进阶、线性代数、离散数学、竞赛 | 0.3 |
 
 - 低学段屏蔽超纲内容 · 高中专属拓展开关 · 动态 Prompt · RAG 学段过滤
 
@@ -101,7 +92,7 @@ math-library/
 
 ### 交互
 
-- 侧边栏「📜 历史对话」显示最近 50 条会话
+- 侧边栏「历史对话」显示最近 50 条会话
 - 新建对话自动创建数据库记录
 - 点击历史会话加载全部消息（含思考过程）
 - hover 显示删除按钮，确认后逻辑删除
@@ -118,7 +109,7 @@ math-library/
 | 思考草稿 | 默认折叠，虚线弱化样式 | 内部推理、试算、多思路 |
 | 正式答案 | 正常展示，高亮清晰 | 标准 LaTeX 解题过程 |
 
-- `reasoning_content` → 隐藏面板，点「📝 查看AI推理过程」展开
+- `reasoning_content` → 隐藏面板，点「查看AI推理过程」展开
 - `content` → 正文区域，匀速平滑输出
 - 展开状态记忆 (LocalStorage) · 首次展开时懒渲染公式
 - 数据库 `think_raw` 字段单独存储
@@ -129,10 +120,10 @@ math-library/
 
 | 厂商 | Provider | 推荐模型 | 推理 |
 |------|----------|---------|------|
-| 深度求索 | `deepseek` | deepseek-v4-pro, deepseek-r1, deepseek-v3.2 | ⭐ R1 |
-| Moonshot Kimi | `moonshot` | kimi-k2.6, kimi-k2.5, moonshot-v1-128k | ⭐ K2.6 |
-| 阿里通义千问 | `qwen` | qwen3.7-max, qwen-max, qwen-plus | ⭐ Max |
-| 智谱AI GLM | `zhipu` | glm-5.2, glm-5-turbo, glm-4.7-flash | ⭐ 5.2 |
+| 深度求索 | `deepseek` | deepseek-v4-pro, deepseek-r1, deepseek-v3.2 | R1 |
+| Moonshot Kimi | `moonshot` | kimi-k2.6, kimi-k2.5, moonshot-v1-128k | K2.6 |
+| 阿里通义千问 | `qwen` | qwen3.7-max, qwen-max, qwen-plus | Max |
+| 智谱AI GLM | `zhipu` | glm-5.2, glm-5-turbo, glm-4.7-flash | 5.2 |
 | MiniMax | `minimax` | MiniMax-M3, MiniMax-M2.7 | |
 | 小米 MiMo | `mimo` | mimo-v2.5-pro, mimo-v2-pro, mimo-v2-flash | |
 
@@ -181,7 +172,7 @@ mvn spring-boot:run
 1. 选择厂商与模型 → 点击 **API Key** 填入密钥
 2. 侧边栏选择学段
 3. 输入数学题目，回车发送
-4. AI 流式输出答案 · 推理过程在「📝 查看AI推理过程」中
+4. AI 流式输出答案 · 推理过程在「查看AI推理过程」中
 
 ---
 
@@ -238,11 +229,11 @@ src/main/java/com/chatbot/
 ├── ChatController.java / ChatService.java / ChatMessage.java
 ├── adapter/            # 6 厂商适配器
 ├── model/              # UnifiedChatRequest, UnifiedStreamChunk
-├── history/            # ★ 对话历史持久化
+├── history/            # 对话历史持久化
 │   ├── ChatSessionEntity.java / ChatMessageEntity.java
 │   ├── ChatSessionRepository.java / ChatMessageRepository.java
 │   └── ChatHistoryService.java
-└── rag/                # ★ RAG 知识库
+└── rag/                # RAG 知识库
     ├── RagService.java / KnowledgeBaseController.java
     ├── model/          # DocumentChunk, VectorDocument, SearchResult
     ├── document/       # PdfDocumentParser, MathChunkingStrategy, MathPixClient, ScanOcrClient
@@ -258,15 +249,15 @@ src/main/java/com/chatbot/
 ### v3.0.0 — 深空智能体 · 历史系统 · 思考可视化 (2026-06-22)
 
 **新增**
-- 🎨 深空玻璃拟态 UI：渐变星空背景、毛玻璃卡片、粒子动效、鼠标柔光、流光边框
-- 💬 对话历史系统：H2 持久化、会话列表、切换/删除/自动标题
-- 🧠 思考过程可视化：reasoning_content 分离存储、折叠面板、展开状态记忆
-- ⚡ 流式平滑打字机：缓冲队列 + 25ms 匀速输出 + 智能加速
-- 📐 LaTeX 渲染全面修复：trust/strict 模式、`\[`/`\(` 兼容、裸公式自动包裹、破碎公式修复
-- 🔧 公式标准化管道：FormulaNormalizer + 批量重标准化接口
-- 🌐 网页爬虫：BFS + Playwright + 公式自动标准化
-- 📷 OCR 多通道：PaddleOCR + Pix2Tex + MathPix
-- 🏷 苏巷雨品牌标识：侧边栏品牌头、欢迎卡片、顶部栏
+- 深空玻璃拟态 UI：渐变星空背景、毛玻璃卡片、粒子动效、鼠标柔光、流光边框
+- 对话历史系统：H2 持久化、会话列表、切换/删除/自动标题
+- 思考过程可视化：reasoning_content 分离存储、折叠面板、展开状态记忆
+- 流式平滑打字机：缓冲队列 + 25ms 匀速输出 + 智能加速
+- LaTeX 渲染全面修复：trust/strict 模式、`\[`/`\(` 兼容、裸公式自动包裹、破碎公式修复
+- 公式标准化管道：FormulaNormalizer + 批量重标准化接口
+- 网页爬虫：BFS + Playwright + 公式自动标准化
+- OCR 多通道：PaddleOCR + Pix2Tex + MathPix
+- 苏巷雨品牌标识：侧边栏品牌头、欢迎卡片、顶部栏
 
 **改进**
 - SSE 新增 `reasoning` 事件类型

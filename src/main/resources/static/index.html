@@ -11,8 +11,8 @@
 <script>
 marked.use({breaks:true,gfm:true,renderer:{code({text:code,lang}){
   if(lang&&typeof hljs!=='undefined'&&hljs.getLanguage(lang)){try{var h=hljs.highlight(code,{language:lang,ignoreIllegals:true});
-  return'<div class="step-block"><div class="step-header">📝 解题步骤</div><pre><code class="hljs language-'+lang+'">'+h.value+'</code></pre></div>';}catch(e){}}
-  return'<div class="step-block"><div class="step-header">📝 解题步骤</div><pre><code>'+code+'</code></pre></div>';}}});
+  return'<div class="step-block"><div class="step-header">解题步骤</div><pre><code class="hljs language-'+lang+'">'+h.value+'</code></pre></div>';}catch(e){}}
+  return'<div class="step-block"><div class="step-header">解题步骤</div><pre><code>'+code+'</code></pre></div>';}}});
 </script>
 <style>
 :root{
@@ -80,35 +80,10 @@ body::after{content:"";position:fixed;top:0;left:0;width:100%;height:100%;pointe
 #sidebar.collapsed{margin-left:-270px}
 .side-section{padding:12px 14px;border-bottom:1px solid var(--sep)}
 .side-section h4{font-size:13px;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.side-section h4 .icon{font-size:16px}
 .grade-toggle{display:flex;gap:6px}
 .grade-btn{flex:1;padding:6px 12px;border-radius:18px;border:1.5px solid var(--sep);background:var(--surface);color:var(--text2);font-size:12px;cursor:pointer;text-align:center;transition:all .2s}
 .grade-btn.active{background:var(--primary);color:#fff;border-color:var(--primary);font-weight:600}
 .grade-btn:hover:not(.active){border-color:var(--primary-light);color:var(--primary)}
-.kp-tree{max-height:280px;overflow-y:auto}
-.kp-tag{display:inline-block;padding:3px 10px;margin:2px 3px;border-radius:12px;background:var(--primary-bg);color:var(--primary);font-size:11px;cursor:pointer;transition:all .2s;border:1px solid transparent}
-.kp-tag:hover{background:var(--primary);color:#fff;border-color:var(--primary);transform:translateY(-1px)}
-.kp-cat{font-size:11px;font-weight:700;color:var(--text2);margin-top:8px;margin-bottom:3px;padding-left:2px}
-.formula-item{font-size:12px;color:var(--primary);padding:5px 8px;margin:3px 0;cursor:pointer;border-radius:8px;transition:all .2s;border-left:2px solid transparent;display:flex;align-items:center;gap:6px;position:relative}
-.formula-item:hover{background:var(--primary-bg);border-left-color:var(--primary);transform:translateX(3px)}
-.formula-item .fn{font-weight:600;color:var(--primary);flex-shrink:0;min-width:0}
-.formula-item .fv{color:var(--text2);font-size:0.95em;flex:1;min-width:0;overflow-x:auto}
-.formula-item .fv .katex{font-size:0.95em}
-.formula-item .fv .katex-display{margin:2px 0;padding:0}
-.formula-item .f-actions{display:none;gap:3px;flex-shrink:0}
-.formula-item:hover .f-actions{display:flex}
-.formula-item .f-btn{font-size:10px;padding:2px 5px;border-radius:4px;border:1px solid var(--sep);background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s;white-space:nowrap}
-.formula-item .f-btn:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
-/* 公式悬浮预览弹窗 */
-#formula-popup{position:fixed;z-index:300;background:rgba(20,15,45,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(180,150,255,.25);border-radius:14px;padding:14px 18px;box-shadow:0 12px 40px rgba(80,40,180,.3);max-width:420px;display:none}
-.light #formula-popup{background:rgba(255,255,255,.95);border:1px solid rgba(140,100,255,.2);box-shadow:0 8px 30px rgba(0,0,0,.15)}
-#formula-popup .popup-title{font-size:13px;font-weight:700;color:var(--primary);margin-bottom:8px}
-#formula-popup .popup-formula{font-size:1.15em;overflow-x:auto}
-#formula-popup .popup-latex{font-size:11px;color:var(--text2);margin-top:6px;font-family:Consolas,monospace;background:var(--surface2);padding:4px 8px;border-radius:4px;word-break:break-all;display:block}
-#formula-popup .popup-actions{display:flex;gap:6px;margin-top:8px}
-#formula-popup .popup-actions button{font-size:11px;padding:4px 10px;border-radius:14px;border:1px solid var(--sep);background:var(--surface2);color:var(--text);cursor:pointer;transition:all .15s}
-#formula-popup .popup-actions button:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
-#formula-popup .popup-hint{font-size:10px;color:var(--text2);margin-top:4px}
 .error-item{font-size:12px;padding:6px 8px;margin:3px 0;background:var(--surface);border-radius:8px;cursor:pointer;border:1px solid var(--sep);transition:all .2s}
 .error-item:hover{border-color:var(--primary-light);transform:translateX(2px)}
 .error-item .eq{color:var(--text);font-weight:500}
@@ -209,23 +184,6 @@ html{overflow-anchor:auto !important}
 #send-btn:disabled{background:rgba(140,120,200,.3);box-shadow:none;cursor:not-allowed;transform:none}
 #stop-btn{padding:12px 24px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;border-radius:24px;font-size:15px;font-weight:600;cursor:pointer;display:none;white-space:nowrap;box-shadow:0 2px 8px rgba(239,68,68,.2)}
 #status{font-size:11px;color:var(--text2);padding:3px 18px 0}
-/* 欢迎卡片 */
-.welcome-card{text-align:center;padding:50px 20px;animation:fadeUp .5s ease-out;position:relative}
-.welcome-card::before{content:"";position:absolute;inset:-2px;border-radius:20px;padding:2px;background:conic-gradient(from 0deg,#7b61ff,#44ccff,#c084fc,#7b61ff);-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:spin 4s linear infinite;opacity:.2;pointer-events:none}
-.welcome-card .wicon-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:12px}
-.welcome-card .wicon{font-size:52px;display:block;filter:drop-shadow(0 0 16px rgba(130,100,255,.4))}
-.welcome-card .wbrand{font-size:30px;font-weight:900;background:linear-gradient(90deg,#a88bff,#63d0ff,#c99bff);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:4px;text-shadow:0 0 22px rgba(160,120,255,.4)}
-.light .welcome-card .wbrand{background:var(--welcome-gradient);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:none}
-.welcome-card h2{font-size:24px;font-weight:700;background:linear-gradient(90deg,#a88bff,#63d0ff);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:10px}
-.light .welcome-card h2{background:var(--welcome-gradient);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.welcome-card .wsub{color:var(--accent);font-size:13px;font-weight:600;margin-bottom:4px}
-.welcome-card .wdesc{color:var(--text2);font-size:14px;margin-bottom:20px;line-height:1.6}
-.welcome-card .suggestions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
-.welcome-card .suggestions button{padding:10px 18px;border-radius:22px;border:1.5px solid rgba(150,130,255,.25);background:rgba(255,255,255,.04);color:var(--primary-light);font-size:13px;cursor:pointer;transition:all .2s}
-.light .welcome-card .suggestions button{background:#fff;border-color:#bfdbfe;color:var(--primary)}
-.welcome-card .suggestions button:hover{background:rgba(140,100,255,.12);transform:translateY(-1px);border-color:var(--primary-light)}
-.welcome-card .quick-funcs{display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap}
-.welcome-card .quick-funcs span{padding:6px 14px;background:rgba(140,100,255,.1);border-radius:16px;font-size:12px;color:var(--primary-light);font-weight:500;border:1px solid rgba(140,100,255,.12)}
 /* 侧边栏品牌头 */
 .side-brand{text-align:center;padding:14px 12px;background:linear-gradient(135deg,#7b61ff,#4488ff);border-radius:16px 16px 0 0}
 .side-brand .sb-name{font-size:20px;font-weight:900;color:#fff;letter-spacing:2px}
@@ -248,6 +206,8 @@ html{overflow-anchor:auto !important}
 .kb-file-item:hover{border-color:var(--primary-light)}
 .kb-file-item .fn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kb-file-item .fs{color:var(--text2);font-size:10px;margin:0 8px}
+.kb-file-item .kb-del{color:#ef4444;font-size:10px;cursor:pointer;padding:2px 6px;border:1px solid rgba(239,68,68,.2);border-radius:4px;flex-shrink:0}
+.kb-file-item .kb-del:hover{background:rgba(239,68,68,.1)}
 .kb-stats{display:flex;gap:12px;flex-wrap:wrap;margin:10px 0;font-size:12px}
 .kb-stats span{background:var(--primary-bg);padding:4px 10px;border-radius:10px;color:var(--primary)}
 
@@ -277,7 +237,7 @@ html{overflow-anchor:auto !important}
 <canvas id="particle-canvas"></canvas>
 <div id="app">
 <!-- 侧边栏切换 -->
-<button id="sidebar-toggle" onclick="toggleSidebar()" title="功能面板">☰ 教学工具</button>
+<button id="sidebar-toggle" onclick="toggleSidebar()" title="功能面板">教学工具</button>
 
 <!-- 侧边栏 -->
 <div id="sidebar">
@@ -286,22 +246,22 @@ html{overflow-anchor:auto !important}
     <div class="sb-sub">智慧教学智能体</div>
   </div>
   <div class="side-section" id="history-section">
-    <h4><span class="icon">📜</span> 历史对话
-      <button class="f-btn" onclick="createNewSession()" style="margin-left:auto;font-size:11px" title="新建对话">＋ 新建</button>
+    <h4>历史对话
+      <button class="top-btn" onclick="createNewSession()" style="margin-left:auto" title="新建对话">＋ 新建</button>
     </h4>
     <div id="history-list" style="max-height:180px;overflow-y:auto">
       <div class="empty-hint">加载中...</div>
     </div>
   </div>
   <div class="side-section">
-    <h4><span class="icon">🎓</span> 学段选择</h4>
+    <h4>学段选择</h4>
     <select id="stage-sel" onchange="onStageChange()" style="width:100%;padding:6px 10px;border-radius:8px;border:1px solid var(--sep);background:var(--surface);font-size:12px;color:var(--text);margin-bottom:6px">
-      <option value="primary">🏫 小学（1-6年级）</option>
-      <option value="junior">🏫 初中（7-9年级）</option>
-      <option value="senior">🎓 高中（高一~高三）</option>
+      <option value="primary">小学（1-6年级）</option>
+      <option value="junior">初中（7-9年级）</option>
+      <option value="senior">高中（高一~高三）</option>
     </select>
     <div style="display:flex;align-items:center;gap:6px;font-size:11px;margin-top:4px">
-      <span>🔓 大学拓展</span>
+      <span>大学拓展</span>
       <label style="position:relative;display:inline-block;width:36px;height:20px">
         <input type="checkbox" id="extend-toggle" onchange="onExtendToggle()" style="opacity:0;width:0;height:0">
         <span id="extend-toggle-bg" style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#cbd5e1;border-radius:20px;transition:.3s"></span>
@@ -310,17 +270,9 @@ html{overflow-anchor:auto !important}
     </div>
   </div>
   <div class="side-section">
-    <h4><span class="icon">📚</span> 知识点目录</h4>
-    <div class="kp-tree" id="kp-tree"></div>
-  </div>
-  <div class="side-section">
-    <h4><span class="icon">📐</span> 公式速查</h4>
-    <div id="formula-list" style="max-height:200px;overflow-y:auto"></div>
-  </div>
-  <div class="side-section">
-    <h4><span class="icon">📚</span> 知识库 <span style="font-size:10px;color:var(--text2)">RAG</span></h4>
+    <h4>知识库 <span style="font-size:10px;color:var(--text2)">RAG</span></h4>
     <div id="kb-status" style="font-size:11px;color:var(--text2);margin-bottom:6px">加载中...</div>
-    <button class="top-btn" onclick="openKbManager()" style="width:100%;margin-bottom:4px">📂 管理知识库</button>
+    <button class="top-btn" onclick="openKbManager()" style="width:100%;margin-bottom:4px">管理知识库</button>
     <div style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11px">
       <span>RAG增强</span>
       <label style="position:relative;display:inline-block;width:36px;height:20px">
@@ -331,7 +283,7 @@ html{overflow-anchor:auto !important}
     </div>
   </div>
   <div class="side-section">
-    <h4><span class="icon">📝</span> 错题本 <span style="font-size:10px;color:var(--text2)">(本地存储)</span></h4>
+    <h4>错题本 <span style="font-size:10px;color:var(--text2)">(本地存储)</span></h4>
     <div id="error-list"></div>
   </div>
 </div>
@@ -339,46 +291,27 @@ html{overflow-anchor:auto !important}
 <!-- 主区域 -->
 <div id="main-area">
 <div id="top-bar">
-  <h1>🎓 苏巷雨 · 智慧教学智能体</h1>
+  <h1>苏巷雨 · 智慧教学智能体</h1>
   <div class="top-btns">
     <select id="provider-sel" class="model-sel" onchange="onProviderChange()"></select>
     <select id="model-sel" class="model-sel" onchange="saveCurrentConfig()"></select>
     <span class="model-name" id="current-model-label"></span>
     <span class="math-badge" id="grade-badge">初中</span>
-    <button class="top-btn" onclick="toggleTheme()" id="theme-btn">🌙 深色</button>
-    <button class="top-btn" onclick="clearConversation()">🗑 清空</button>
-    <button class="top-btn" onclick="openSettings()">🔑 API Key</button>
-    <button class="top-btn" onclick="openModelConfig()">⚙ 模型</button>
+    <button class="top-btn" onclick="toggleTheme()" id="theme-btn">深色模式</button>
+    <button class="top-btn" onclick="clearConversation()">清空</button>
+    <button class="top-btn" onclick="openSettings()">API Key</button>
+    <button class="top-btn" onclick="openModelConfig()">模型</button>
   </div>
 </div>
 
-<div id="chat-list">
-  <div class="welcome-card">
-    <div class="wicon-row">
-      <span class="wicon">🎓</span>
-      <span class="wbrand">苏巷雨</span>
-    </div>
-    <h2>智慧教学智能体</h2>
-    <p class="wsub">K12数学辅导 · 多模型推理 · 公式渲染 · 知识库RAG增强</p>
-    <p class="wdesc">支持：函数 · 几何 · 导数 · 数列 · 方程 · 证明题 · 概率统计<br>多厂商推理模型一键切换 | LaTeX公式实时渲染 | 分步解析</p>
-    <div class="quick-funcs">
-      <span>🔍 解题</span><span>📖 公式查询</span><span>📝 错题整理</span><span>📊 知识点总结</span><span>🤖 RAG知识库</span>
-    </div>
-    <div class="suggestions" style="margin-top:18px">
-      <button onclick="quickSend('解方程：x² + 3x - 10 = 0')">解一元二次方程</button>
-      <button onclick="quickSend('求函数 f(x)=x³-3x 的单调区间和极值')">导数求单调区间</button>
-      <button onclick="quickSend('证明：三角形内角和等于180°')">几何证明题</button>
-      <button onclick="quickSend('求等差数列的第n项公式及前n项和')">数列求通项</button>
-    </div>
-  </div>
-</div>
+<div id="chat-list"></div>
 
-<button id="fav-btn" onclick="saveToErrorBook()">⭐ 收藏到错题本</button>
-<button id="back-btn" onclick="scrollToBottom()">↓ 回到底部</button>
+<button id="fav-btn" onclick="saveToErrorBook()">收藏到错题本</button>
+<button id="back-btn" onclick="scrollToBottom()">回到底部</button>
 
 <div id="input-area">
   <div id="formula-bar">
-    <button onclick="insertFormula('$$','$$')" title="块级公式">📐 公式块</button>
+    <button onclick="insertFormula('$$','$$')" title="块级公式">公式块</button>
     <button onclick="insertFormula('$','$')" title="行内公式">fx 行内</button>
     <button onclick="insertFormula('\\frac{','}{}')" title="分数">⅔ 分数</button>
     <button onclick="insertFormula('\\sqrt{','}')" title="根号">√ 根号</button>
@@ -391,65 +324,61 @@ html{overflow-anchor:auto !important}
     <button onclick="insertFormula('\\pi','')" title="圆周率">π</button>
   </div>
   <div id="quick-bar">
-    <button onclick="appendCommand('请分步详细解这道题，标注每一步的公式和定理')" class="math-action">📋 分步详细解</button>
-    <button onclick="appendCommand('请标注这道题的易错点和常见错误')" class="math-action">⚠ 标注易错点</button>
-    <button onclick="appendCommand('请生成1道同类变式练习题，并给出解答')" class="math-action">🔄 生成变式题</button>
-    <button onclick="appendCommand('请总结这类题目的通用解题方法和套路')" class="math-action">💡 总结解题方法</button>
-    <button onclick="appendCommand('请梳理本题涉及的所有知识点，并标注对应的课本考点')">📚 梳理知识点</button>
+    <button onclick="appendCommand('请分步详细解这道题，标注每一步的公式和定理')" class="math-action"> 分步详细解</button>
+    <button onclick="appendCommand('请标注这道题的易错点和常见错误')" class="math-action"> 标注易错点</button>
+    <button onclick="appendCommand('请生成1道同类变式练习题，并给出解答')" class="math-action">生成变式题</button>
+    <button onclick="appendCommand('请总结这类题目的通用解题方法和套路')" class="math-action">总结解题方法</button>
+    <button onclick="appendCommand('请梳理本题涉及的所有知识点，并标注对应的课本考点')">梳理知识点</button>
   </div>
   <div id="input-row">
-    <textarea id="input-box" rows="1" placeholder="输入数学题目、知识点疑问（如：二次函数顶点式解题方法）"></textarea>
-    <button id="send-btn" onclick="sendMessage()">📤 发送</button>
-    <button id="stop-btn" onclick="stopGeneration()">⏹ 停止</button>
+    <textarea id="input-box" rows="1"></textarea>
+    <button id="send-btn" onclick="sendMessage()">发送</button>
+    <button id="stop-btn" onclick="stopGeneration()">停止</button>
   </div>
-  <div id="status">✅ 就绪 — 苏巷雨智慧教学智能体 · 选择模型开始辅导</div>
+  <div id="status">就绪 — 苏巷雨智慧教学智能体 · 选择模型开始辅导</div>
 </div>
 </div></div>
 
 <div id="toast"></div>
 
-<div id="formula-popup">
-  <div class="popup-title"></div>
-  <div class="popup-formula"></div>
-  <div class="popup-latex"></div>
-  <div class="popup-actions">
-    <button onclick="copyFormulaLatex(_popupFormulaLatex)">📋 复制 LaTeX</button>
-    <button onclick="insertFormulaToInput(_popupFormulaLatex)">📥 插入到输入框</button>
-  </div>
-</div>
-
 <div id="settings-overlay" onclick="if(event.target===this)closeSettings()">
-<div id="settings-dialog"><h3>🔑 配置 API Key</h3>
+<div id="settings-dialog"><h3>配置 API Key</h3>
 <label>当前厂商</label><p id="cfg-provider-name" style="font-weight:600;margin-bottom:8px"></p>
 <label>API Key</label><input id="cfg-apikey" type="password" placeholder="sk-...">
 <label>自定义 Base URL (可选)</label><input id="cfg-baseurl" placeholder="https://api.deepseek.com/v1">
-<p style="font-size:12px;color:var(--text2);margin-top:8px">💡 推荐数理推理模型：DeepSeek-R1 / GLM-5.2 / Kimi K2.6 / Qwen-Max</p>
+<p style="font-size:12px;color:var(--text2);margin-top:8px">推荐数理推理模型：DeepSeek-R1 / GLM-5.2 / Kimi K2.6 / Qwen-Max</p>
 <div class="btn-row"><button class="btn-cancel" onclick="closeSettings()">取消</button><button class="btn-save" onclick="saveSettings()">保存</button></div>
 </div></div>
 
 <div id="model-config-overlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.4);z-index:100;justify-content:center;align-items:center" onclick="if(event.target===this)closeModelConfig()">
-<div id="settings-dialog"><h3>⚙ 多模型配置管理</h3>
-<p style="font-size:12px;color:var(--text2);margin-bottom:12px">⭐ = 数理推理优选模型</p>
+<div id="settings-dialog"><h3>多模型配置管理</h3>
 <div id="config-list" style="max-height:400px;overflow-y:auto"></div>
 <div class="btn-row"><button class="btn-cancel" onclick="closeModelConfig()">关闭</button></div></div></div>
 
 <!-- 知识库管理弹窗 -->
 <div id="kb-overlay" onclick="if(event.target===this)closeKbManager()">
 <div id="settings-dialog" style="width:540px">
-  <h3>📚 知识库管理 (RAG)</h3>
+  <h3>知识库管理 (RAG)</h3>
   <div id="kb-stats-panel" class="kb-stats"></div>
   <p style="font-size:12px;color:var(--text2);margin-bottom:8px">
-    💡 将 PDF 教材/题库放入知识库目录后，点击"批量索引"构建向量库。<br>
+    可直接上传 PDF 自动索引；也可将 PDF 放入知识库目录后点击"批量索引"。<br>
     知识库目录：<code id="kb-dir-path" style="font-size:11px;background:var(--primary-bg);padding:2px 6px;border-radius:4px">加载中...</code>
   </p>
   <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-    <button class="top-btn" onclick="refreshKbFileList()">🔄 刷新列表</button>
-    <button class="top-btn" onclick="buildKbIndex()" style="background:var(--primary);color:#fff;border-color:var(--primary)">🚀 批量索引</button>
-    <button class="top-btn" onclick="buildKbIncremental()">📥 增量索引</button>
-    <button class="top-btn" onclick="retryFailedWithOcr()" style="background:#fef3c7;color:#92400e;border-color:#fcd34d">📷 重试OCR</button>
-    <button class="top-btn" onclick="configMathPix()" style="background:#e0e7ff;color:#3730a3;border-color:#c7d2fe">🧠 MathPix</button>
-    <button class="top-btn" onclick="resetKbCheckpoint()">🔁 重置断点</button>
-    <button class="top-btn" onclick="loadFailedFiles()">⚠ 失败清单</button>
+    <button class="top-btn" onclick="refreshKbFileList()">刷新列表</button>
+    <button class="top-btn" onclick="buildKbIndex()" style="background:var(--primary);color:#fff;border-color:var(--primary)">批量索引</button>
+    <button class="top-btn" onclick="buildKbIncremental()">增量索引</button>
+    <button class="top-btn" onclick="retryFailedWithOcr()" style="background:#fef3c7;color:#92400e;border-color:#fcd34d">重试OCR</button>
+    <button class="top-btn" onclick="configMathPix()" style="background:#e0e7ff;color:#3730a3;border-color:#c7d2fe">MathPix</button>
+    <button class="top-btn" onclick="resetKbCheckpoint()">重置断点</button>
+    <button class="top-btn" onclick="loadFailedFiles()">失败清单</button>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+    <input type="file" id="kb-upload-input" accept=".pdf,application/pdf" multiple style="display:none"
+           onchange="document.getElementById('kb-upload-label').textContent='已选 '+this.files.length+' 个文件'">
+    <button class="top-btn" onclick="document.getElementById('kb-upload-input').click()">选择PDF文件</button>
+    <button class="top-btn" onclick="uploadKbFiles()" style="background:var(--primary);color:#fff;border-color:var(--primary)">上传并索引</button>
+    <span id="kb-upload-label" style="font-size:11px;color:var(--text2)"></span>
   </div>
   <div id="kb-file-list" style="max-height:200px;overflow-y:auto;margin-bottom:12px"></div>
   <div style="display:flex;gap:8px;margin-bottom:8px">
@@ -468,63 +397,12 @@ html{overflow-anchor:auto !important}
   <div id="kb-progress-text" style="display:none;font-size:11px;color:var(--text2);text-align:center"></div>
   <div id="kb-failed-list" style="display:none;max-height:150px;overflow-y:auto;margin:8px 0;font-size:11px"></div>
   <div class="btn-row">
-    <button class="top-btn" onclick="clearKb()" style="color:#ef4444">🗑 清空知识库</button>
+    <button class="top-btn" onclick="clearKb()" style="color:#ef4444">清空知识库</button>
     <button class="btn-cancel" onclick="closeKbManager()">关闭</button>
   </div>
 </div></div>
 
 <script>
-// ===== 知识点数据 =====
-const KNOWLEDGE_POINTS = {
-  primary: {
-    '数与运算':['20以内加减','100以内加减','乘法口诀','除法','分数初步','小数初步','四则运算'],
-    '图形与几何':['平面图形','立体图形','周长','面积','体积','角度','线段'],
-    '应用题':['一步应用题','两步应用题','归一问题','归总问题','和差问题','行程问题'],
-  },
-  junior: {
-    '代数':['有理数运算','整式加减','一元一次方程','二元一次方程组','不等式与不等式组','实数','平面直角坐标系','一次函数','二次函数','反比例函数'],
-    '几何':['相交线与平行线','三角形','全等三角形','勾股定理','平行四边形','圆','相似三角形','锐角三角函数','投影与视图'],
-    '统计概率':['数据的收集与整理','概率初步','统计图表'],
-  },
-  senior: {
-    '函数与导数':['集合与逻辑','函数概念与性质','指数对数函数','三角函数','导数与微分','定积分','数列','不等式'],
-    '几何':['平面向量','复数','立体几何','空间向量','直线与圆','圆锥曲线','极坐标与参数方程'],
-    '概率统计':['计数原理','排列组合','二项式定理','概率','随机变量','统计'],
-  }
-};
-const FORMULAS = {
-  primary:[
-    {n:'长方形面积',v:'$$S = a \\times b$$'},
-    {n:'正方形面积',v:'$$S = a^2$$'},
-    {n:'三角形面积',v:'$$S = \\frac{1}{2}ah$$'},
-    {n:'圆的周长',v:'$$C = 2\\pi r$$'},
-    {n:'加法交换律',v:'$$a + b = b + a$$'},
-    {n:'乘法分配律',v:'$$a(b + c) = ab + ac$$'},
-  ],
-  junior:[
-    {n:'一元二次方程求根',v:'$$x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$$'},
-    {n:'勾股定理',v:'$$a^2 + b^2 = c^2$$'},
-    {n:'二次函数顶点式',v:'$$y = a(x-h)^2 + k$$'},
-    {n:'三角形面积',v:'$$S = \\frac{1}{2}ah$$'},
-    {n:'圆面积',v:'$$S = \\pi r^2$$'},
-    {n:'圆周长',v:'$$C = 2\\pi r$$'},
-    {n:'平方差公式',v:'$$a^2 - b^2 = (a+b)(a-b)$$'},
-    {n:'完全平方公式',v:'$$(a \\pm b)^2 = a^2 \\pm 2ab + b^2$$'},
-  ],
-  senior:[
-    {n:'求导公式(xⁿ)',v:'$$\\frac{d}{dx}x^n = nx^{n-1}$$'},
-    {n:'正弦定理',v:'$$\\frac{a}{\\sin A} = \\frac{b}{\\sin B} = \\frac{c}{\\sin C} = 2R$$'},
-    {n:'余弦定理',v:'$$c^2 = a^2 + b^2 - 2ab\\cos C$$'},
-    {n:'等差数列通项',v:'$$a_n = a_1 + (n-1)d$$'},
-    {n:'等差数列求和',v:'$$S_n = \\frac{n(a_1+a_n)}{2}$$'},
-    {n:'等比数列通项',v:'$$a_n = a_1q^{n-1}$$'},
-    {n:'椭圆方程',v:'$$\\frac{x^2}{a^2} + \\frac{y^2}{b^2} = 1$$'},
-    {n:'双曲线方程',v:'$$\\frac{x^2}{a^2} - \\frac{y^2}{b^2} = 1$$'},
-    {n:'三角函数和角',v:'$$\\sin(\\alpha+\\beta)=\\sin\\alpha\\cos\\beta+\\cos\\alpha\\sin\\beta$$'},
-    {n:'基本不等式',v:'$$\\frac{a+b}{2} \\ge \\sqrt{ab}$$'},
-  ]
-};
-
 // ===== 全局状态 =====
 let chatList=document.getElementById('chat-list'),inputBox=document.getElementById('input-box');
 let sendBtn=document.getElementById('send-btn'),stopBtn=document.getElementById('stop-btn');
@@ -545,17 +423,13 @@ function onStageChange(){
   localStorage.setItem('mathStage',currentStage);
   document.getElementById('grade-badge').textContent=getStageLabel(currentStage);
   updateExtendToggleState();
-  renderKnowledgePoints();
-  renderFormulas();
   updateQuickBar();
-  updatePlaceholder();
 }
 function onExtendToggle(){
   allowExtend=!allowExtend;
   localStorage.setItem('allowExtend',allowExtend?'1':'0');
   updateExtendToggleStyle();
   updateQuickBar();
-  updatePlaceholder();
 }
 function updateExtendToggleState(){
   // 只有高中模式才启用大学拓展开关
@@ -583,107 +457,8 @@ function getStageLabel(s){
 function toggleSidebar(){
   sidebarOpen=!sidebarOpen;
   document.getElementById('sidebar').classList.toggle('collapsed',!sidebarOpen);
-  document.getElementById('sidebar-toggle').textContent=sidebarOpen?'☰ 教学工具':'▶';
+  document.getElementById('sidebar-toggle').textContent='教学工具';
   localStorage.setItem('sidebarOpen',sidebarOpen?'1':'0');
-}
-
-// ===== 知识点渲染 =====
-function renderKnowledgePoints(){
-  let tree=document.getElementById('kp-tree'),grade=getStage();
-  let cats=KNOWLEDGE_POINTS[grade]||{};
-  tree.innerHTML='';
-  for(let[cat,points]of Object.entries(cats)){
-    tree.innerHTML+='<div class="kp-cat">'+cat+'</div>';
-    points.forEach(p=>{
-      tree.innerHTML+='<span class="kp-tag" onclick="quickSend(\''+p+'相关题目：请出1道'+p+'的典型例题并给出详解\')">'+p+'</span>';
-    });
-  }
-}
-function renderFormulas(){
-  var list=document.getElementById('formula-list'),grade=getStage();
-  var formulas=FORMULAS[grade]||[];
-  list.innerHTML=formulas.map(function(f){
-    var rendered='';
-    var latex=f.v;
-    if(typeof katex!=='undefined'){
-      try{
-        var inner=latex.replace(/^\$\$([\s\S]*)\$\$$/,'$1').trim();
-        rendered=katex.renderToString(inner,{displayMode:true,throwOnError:false,trust:true,strict:false});
-      }catch(e){
-        rendered='<code style="font-size:11px;color:#e11d48;word-break:break-all">'+escapeHtml(latex)+'</code>';
-      }
-    }else{
-      rendered='<code style="font-size:11px;color:var(--text2)">'+escapeHtml(latex)+'</code>';
-    }
-    var escapedName=escapeHtml(f.n);
-    var escapedLatex=escapeHtml(latex).replace(/'/g,"\\'");
-    return'<div class="formula-item" onmouseenter="showFormulaPopup(event,\''+escapedName+'\',\''+escapedLatex+'\')" onmouseleave="hideFormulaPopup()" onclick="quickSend(\'请解释公式：'+escapedName+'\')" title="点击查询此公式"><span class="fn">'+escapedName+'</span><span class="fv">'+rendered+'</span><span class="f-actions"><button class="f-btn" onclick="event.stopPropagation();copyFormulaLatex(\''+escapedLatex+'\')">复制</button><button class="f-btn" onclick="event.stopPropagation();insertFormulaToInput(\''+escapedLatex+'\')">插入</button></span></div>';
-  }).join('');
-}
-var _popupFormulaLatex='';
-function showFormulaPopup(event,name,latex){
-  var popup=document.getElementById('formula-popup');
-  if(!popup)return;
-  _popupFormulaLatex=decodeHtmlEntities(latex);
-  var innerLatex=_popupFormulaLatex.replace(/^\$\$([\s\S]*)\$\$$/,'$1').trim();
-  popup.querySelector('.popup-title').textContent=decodeHtmlEntities(name);
-  var formulaEl=popup.querySelector('.popup-formula');
-  if(typeof katex!=='undefined'){
-    try{
-      formulaEl.innerHTML=katex.renderToString(innerLatex,{displayMode:true,throwOnError:false,trust:true,strict:false});
-    }catch(e){
-      formulaEl.innerHTML='<code style="color:#e11d48">'+escapeHtml(_popupFormulaLatex)+'</code>';
-    }
-  }else{
-    formulaEl.textContent=_popupFormulaLatex;
-  }
-  popup.querySelector('.popup-latex').textContent=_popupFormulaLatex;
-  popup.style.display='block';
-  var rect=popup.getBoundingClientRect();
-  var x=event.clientX+10,y=event.clientY+10;
-  if(x+rect.width>window.innerWidth-10)x=event.clientX-rect.width-10;
-  if(y+rect.height>window.innerHeight-10)y=event.clientY-rect.height-10;
-  popup.style.left=Math.max(5,x)+'px';
-  popup.style.top=Math.max(5,y)+'px';
-}
-function hideFormulaPopup(){
-  var popup=document.getElementById('formula-popup');
-  if(popup)popup.style.display='none';
-}
-function decodeHtmlEntities(str){
-  var textarea=document.createElement('textarea');
-  textarea.innerHTML=str;
-  return textarea.value;
-}
-function copyFormulaLatex(latex){
-  var realLatex=decodeHtmlEntities(latex);
-  if(navigator.clipboard&&navigator.clipboard.writeText){
-    navigator.clipboard.writeText(realLatex).then(function(){showToast('LaTeX 已复制到剪贴板')})['catch'](function(){fallbackCopy(realLatex)});
-  }else{fallbackCopy(realLatex)}
-}
-function fallbackCopy(text){
-  var ta=document.createElement('textarea');
-  ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
-  document.body.appendChild(ta);ta.select();
-  try{document.execCommand('copy');showToast('LaTeX 已复制到剪贴板')}catch(e){showToast('复制失败，请手动复制')}
-  document.body.removeChild(ta);
-}
-function insertFormulaToInput(latex){
-  var realLatex=decodeHtmlEntities(latex);
-  if(/^\$\$/.test(realLatex)){
-    var inner=realLatex.replace(/^\$\$([\s\S]*)\$\$$/,'$1').trim();
-    insertFormula('$$','$$');
-    var box=document.getElementById('input-box');
-    var idx=box.value.indexOf('...');
-    if(idx>=0)box.value=box.value.substring(0,idx)+inner+box.value.substring(idx+3);
-  }else{
-    insertFormula('$','$');
-    var box2=document.getElementById('input-box');
-    var idx2=box2.value.indexOf('...');
-    if(idx2>=0)box2.value=box2.value.substring(0,idx2)+realLatex+box2.value.substring(idx2+3);
-  }
-  document.getElementById('input-box').focus();
-  showToast('公式已插入输入框');
 }
 
 // ===== 错题本 =====
@@ -701,15 +476,15 @@ function saveToErrorBook(){
   if(book.length>50)book.length=50;
   saveErrorBook(book);
   renderErrorBook();
-  showToast('⭐ 已收藏到错题本');
+  showToast('已收藏到错题本');
 }
 function deleteError(idx){
   let book=getErrorBook();book.splice(idx,1);saveErrorBook(book);renderErrorBook();
 }
 function renderErrorBook(){
   let list=document.getElementById('error-list'),book=getErrorBook();
-  if(!book.length){list.innerHTML='<div class="empty-hint">📭 暂无错题<br>点击AI回答旁的⭐收藏</div>';return}
-  list.innerHTML=book.map((e,i)=>'<div class="error-item" onclick="loadErrorItem('+i+')"><span class="eq">'+escapeHtml(e.question||'(无题干)')+'</span><span class="em">'+getStageLabel(e.stage||'')+' · '+e.time+'</span><span class="error-del" onclick="event.stopPropagation();deleteError('+i+')">✕</span></div>').join('');
+  if(!book.length){list.innerHTML='<div class="empty-hint">暂无错题<br>点击AI回答旁的「收藏到错题本」按钮保存</div>';return}
+  list.innerHTML=book.map((e,i)=>'<div class="error-item" onclick="loadErrorItem('+i+')"><span class="eq">'+escapeHtml(e.question||'(无题干)')+'</span><span class="em">'+getStageLabel(e.stage||'')+' · '+e.time+'</span><span class="error-del" onclick="event.stopPropagation();deleteError('+i+')">删除</span></div>').join('');
 }
 function loadErrorItem(idx){
   let book=getErrorBook();if(!book[idx])return;
@@ -723,9 +498,9 @@ function loadErrorItem(idx){
 function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
 // ===== 主题 =====
-function toggleTheme(){isDark=!isDark;document.body.classList.toggle('light',!isDark);document.getElementById('theme-btn').textContent=isDark?'☀ 浅色':'🌙 深色';localStorage.setItem('theme',isDark?'dark':'light')}
-if(localStorage.getItem('theme')==='light'){isDark=false;document.body.classList.add('light');document.getElementById('theme-btn').textContent='🌙 深色'}
-else{isDark=true;document.body.classList.remove('light');document.getElementById('theme-btn').textContent='☀ 浅色'}
+function toggleTheme(){isDark=!isDark;document.body.classList.toggle('light',!isDark);document.getElementById('theme-btn').textContent=isDark?'浅色模式':'深色模式';localStorage.setItem('theme',isDark?'dark':'light')}
+if(localStorage.getItem('theme')==='light'){isDark=false;document.body.classList.add('light');document.getElementById('theme-btn').textContent='深色模式'}
+else{isDark=true;document.body.classList.remove('light');document.getElementById('theme-btn').textContent='浅色模式'}
 
 // ===== 模型配置 =====
 async function loadProviders(){
@@ -780,15 +555,30 @@ function updateModelLabel(){
   let p=providers.find(x=>x.provider===currentConfig.provider);
   let reasoningModels=['deepseek-r1','glm-5.2','kimi-k2.6','kimi-k2.5','qwen3.7-max'];
   let isReasoning=reasoningModels.includes(currentConfig.modelName);
-  document.getElementById('current-model-label').textContent=(p?p.providerName:'')+' / '+currentConfig.modelName+(isReasoning?' ⭐':'');
+  document.getElementById('current-model-label').textContent=(p?p.providerName:'')+' / '+currentConfig.modelName+(isReasoning?' · 优选':'');
 }
 document.getElementById('model-sel').addEventListener('change',saveCurrentConfig);
 
 // ===== 会话 =====
 async function initSession(){
-  try{let r=await fetch('/api/session');let d=await r.json();sessionId=d.sid;document.cookie='sid='+sessionId+';path=/';
-  let h=await fetch('/api/history');let ms=await h.json();
-  if(ms.length>0){document.querySelector('.welcome-card')?.remove();ms.forEach(m=>addMessage(m.content,m.role==='USER'?'user':'ai'));}
+  try{
+    // 复用已有 sid cookie（会话归属标识，刷新后保持不变），没有才创建
+    let sidMatch=document.cookie.match(/(?:^|;\s*)sid=([^;]+)/);
+    sessionId=sidMatch?sidMatch[1]:'';
+    if(!sessionId){
+      let r=await fetch('/api/session');let d=await r.json();
+      sessionId=d.sid;document.cookie='sid='+sessionId+';path=/';
+    }
+    // 刷新后从数据库恢复上次会话（数据库是上下文的唯一来源）
+    if(currentDbSessionId){
+      try{
+        let r=await fetch('/api/history/messages/'+currentDbSessionId);
+        let ms=await r.json();
+        if(ms.length>0){
+          ms.forEach(m=>{if(m.role==='user')addMessage(m.content,'user');else if(m.role==='assistant')addMessage(m.content,'ai',m.thinkRaw||null)});
+        }
+      }catch(_){}
+    }
   }catch(_){}
 }
 
@@ -805,7 +595,7 @@ function addMessage(text,sender){
   if(!userScrolledUp)scrollToBottom();
   if(sender==='ai'){lastAiFullText=text;favBtn.style.display='block'}
 }
-function addLoading(){let w=document.querySelector('.welcome-card');if(w)w.remove();let row=document.createElement('div');row.className='row ai';row.id='loading-msg';let b=document.createElement('div');b.className='bubble loading-dots';b.textContent='🤔 思考中';let d=document.createElement('span');['.','.','.'].forEach(()=>{let s=document.createElement('span');s.className='dot';s.textContent='.';d.appendChild(s)});b.appendChild(d);row.appendChild(b);chatList.appendChild(row);if(!userScrolledUp)scrollToBottom()}
+function addLoading(){let w=document.querySelector('.welcome-card');if(w)w.remove();let row=document.createElement('div');row.className='row ai';row.id='loading-msg';let b=document.createElement('div');b.className='bubble loading-dots';b.textContent='思考中';let d=document.createElement('span');['.','.','.'].forEach(()=>{let s=document.createElement('span');s.className='dot';s.textContent='.';d.appendChild(s)});b.appendChild(d);row.appendChild(b);chatList.appendChild(row);if(!userScrolledUp)scrollToBottom()}
 function removeLoading(){let e=document.getElementById('loading-msg');if(e) e.remove()}
 function addAiBubble(){let old=document.getElementById('ai-stream');if(old)old.removeAttribute('id');let row=document.createElement('div');row.className='row ai';row.id='ai-stream';let b=document.createElement('div');b.className='bubble';row.appendChild(b);chatList.appendChild(row)}
 function updateAiBubble(text){
@@ -814,7 +604,10 @@ function updateAiBubble(text){
 function _doRender(text,isFinal){
   var row=document.getElementById('ai-stream');if(!row)return;
   var rendered=renderLatex(text,isFinal);
-  row.querySelector('.bubble').innerHTML=marked.parse(rendered);
+  var bubble=row.querySelector('.bubble');
+  // 只重绘答案区域，保留思考面板 DOM 不被清掉
+  var target=bubble.querySelector('#answer-block')||bubble;
+  target.innerHTML=marked.parse(rendered);
   if(!userScrolledUp)debounceScroll();
 }
 function updateAiBubbleFinal(text){
@@ -944,6 +737,8 @@ async function sendMessage(){
   if(isLoading){stopGeneration();return}
   let text=inputBox.value.trim();if(!text)return;
   if(!currentConfig.apiKey){openSettings();return}
+  // 新一轮生成前重置平滑打字机，避免把上一轮答案残留在新气泡中
+  _clearSmoother();
   // 无会话时自动创建
   if(!currentDbSessionId){
     try{
@@ -966,7 +761,7 @@ async function sendMessage(){
       let{done,value}=await reader.read();
       if(done){
         if(currentEvent==='chunk'&&eventLines.length>0){
-          try{let o=JSON.parse(eventLines.join('\n'));if(o.type==='chunk'){if(!_bubbleReady){removeLoading();addAiBubble();_bubbleReady=true};aiText+=o.content||'';_feedSmooth(o.content||'')}else if(o.type==='error'){updateAiBubble('❌ [错误] '+o.errMsg)}}
+          try{let o=JSON.parse(eventLines.join('\n'));if(o.type==='chunk'){if(!_bubbleReady){removeLoading();addAiBubble();_bubbleReady=true};aiText+=o.content||'';_feedSmooth(o.content||'')}else if(o.type==='error'){updateAiBubble('[错误] '+o.errMsg)}}
           catch(e){aiText+=eventLines.join('\n');updateAiBubble(aiText)}
         }else if(currentEvent==='reasoning'&&eventLines.length>0){
           try{let o=JSON.parse(eventLines.join('\n'));if(o.reasoning){thinkText+=o.reasoning;updateThinkPanel(thinkText)}}
@@ -978,14 +773,14 @@ async function sendMessage(){
       for(let line of lines){
         if(line===''){
           if(currentEvent==='chunk'&&eventLines.length>0){
-            try{let o=JSON.parse(eventLines.join('\n'));if(o.type==='chunk'){if(!_bubbleReady){removeLoading();addAiBubble();_bubbleReady=true};aiText+=o.content||'';_feedSmooth(o.content||'')}else if(o.type==='error'){updateAiBubble('❌ [错误] '+o.errMsg)}}
+            try{let o=JSON.parse(eventLines.join('\n'));if(o.type==='chunk'){if(!_bubbleReady){removeLoading();addAiBubble();_bubbleReady=true};aiText+=o.content||'';_feedSmooth(o.content||'')}else if(o.type==='error'){updateAiBubble('[错误] '+o.errMsg)}}
             catch(e){aiText+=eventLines.join('\n');updateAiBubble(aiText)}
           }else if(currentEvent==='reasoning'&&eventLines.length>0){
             try{let o=JSON.parse(eventLines.join('\n'));if(o.reasoning){thinkText+=o.reasoning;updateThinkPanel(thinkText)}}
             catch(e){}
-            var lb=document.getElementById('loading-msg');if(lb)lb.querySelector('.bubble').innerHTML='🧠 深度思考中<span><span class=dot>.</span><span class=dot>.</span><span class=dot>.</span></span>';
+            var lb=document.getElementById('loading-msg');if(lb)lb.querySelector('.bubble').innerHTML='深度思考中<span><span class=dot>.</span><span class=dot>.</span><span class=dot>.</span></span>';
           }else if(currentEvent==='finish'){
-            setLoading(false);statusEl.textContent='✅ 回答完成';
+            setLoading(false);statusEl.textContent='回答完成';
             lastAiFullText=aiText;favBtn.style.display='block';
             // 流结束：全量渲染一次（自动包裹未标记公式 + 清理未闭合 $$）
             aiText=_flushSmooth();updateAiBubbleFinal(aiText);
@@ -1000,24 +795,24 @@ async function sendMessage(){
       }
     }
   }catch(e){
-    if(e.name==='AbortError'){removeLoading();if(!aiText){addAiBubble();updateAiBubble('⏹ [已停止]')}}
-    else{removeLoading();addAiBubble();updateAiBubble('❌ [错误] '+e.message)}
-  }finally{currentAbort=null;setLoading(false);if(statusEl.textContent!=='✅ 回答完成')statusEl.textContent='✅ 就绪'}
+    if(e.name==='AbortError'){removeLoading();if(!aiText){addAiBubble();updateAiBubble('[已停止]')}}
+    else{removeLoading();addAiBubble();updateAiBubble('[错误] '+e.message)}
+  }finally{currentAbort=null;setLoading(false);if(statusEl.textContent!=='回答完成')statusEl.textContent='就绪'}
 }
-function stopGeneration(){if(currentAbort){currentAbort.abort();currentAbort=null}_clearSmoother();setLoading(false);statusEl.textContent='⏹ 已停止'}
+function stopGeneration(){if(currentAbort){currentAbort.abort();currentAbort=null}_clearSmoother();setLoading(false);statusEl.textContent='已停止'}
 
 // ===== 流式平滑打字机 =====
-var _smoothBuf='',_smoothTimer=null,_smoothText='',_smoothSpeed=25,_smoothStarted=false;
+var _smoothBuf='',_smoothTimer=null,_smoothText='',_smoothSpeed=30,_smoothStarted=false;
 function _feedSmooth(chunk){
   _smoothBuf+=chunk;
   // 首个分片立即展示，消除等待感；后续平滑输出
-  if(!_smoothStarted){_smoothStarted=true;_smoothSpeed=25}
+  if(!_smoothStarted){_smoothStarted=true;_smoothSpeed=30}
   if(!_smoothTimer)_smoothTimer=setInterval(_tickSmooth,_smoothSpeed);
 }
 function _tickSmooth(){
   if(_smoothBuf.length===0){clearInterval(_smoothTimer);_smoothTimer=null;return}
   // 缓冲区积压超过200字时加速输出，避免越等越多
-  var n=_smoothBuf.length>200?Math.min(10,_smoothBuf.length):Math.min(4,_smoothBuf.length);
+  var n=_smoothBuf.length>200?Math.min(20,_smoothBuf.length):Math.min(8,_smoothBuf.length);
   _smoothText+=_smoothBuf.slice(0,n);
   _smoothBuf=_smoothBuf.slice(n);
   _doRender(_smoothText,false);
@@ -1031,13 +826,15 @@ function _clearSmoother(){
   if(_smoothTimer){clearInterval(_smoothTimer);_smoothTimer=null}
   _smoothBuf='';_smoothText='';_smoothStarted=false;
 }
-function quickSend(text){inputBox.value=text;sendMessage()}
-function setLoading(v){isLoading=v;sendBtn.style.display=v?'none':'';stopBtn.style.display=v?'':'none';if(v)statusEl.textContent='🤔 AI思考中...';favBtn.style.display='none'}
+function setLoading(v){isLoading=v;sendBtn.style.display=v?'none':'';stopBtn.style.display=v?'':'none';if(v)statusEl.textContent='AI思考中...';favBtn.style.display='none'}
 function clearConversation(){
   stopGeneration();
   fetch('/api/chat',{method:'DELETE'});
   chatList.innerHTML=buildWelcomeCard();
-  inputBox.value='';inputBox.focus();statusEl.textContent='🗑 已清空';lastAiFullText='';favBtn.style.display='none';
+  // 重置会话ID：下一条消息会自动创建全新会话，保证上下文干净
+  currentDbSessionId=null;
+  localStorage.removeItem('currentDbSessionId');
+  inputBox.value='';inputBox.focus();statusEl.textContent='已清空';lastAiFullText='';favBtn.style.display='none';
 }
 
 // ===== 滚动 =====
@@ -1062,7 +859,7 @@ function saveSettings(){
   if(!apiKey){showToast('请输入API Key');return}
   currentConfig.apiKey=apiKey;
   currentConfig.baseUrl=baseUrl||currentConfig.baseUrl;
-  saveCurrentConfig();closeSettings();showToast('✅ 配置已保存');
+  saveCurrentConfig();closeSettings();showToast('配置已保存');
 }
 function openModelConfig(){
   let list=document.getElementById('config-list');list.innerHTML='';
@@ -1074,9 +871,9 @@ function openModelConfig(){
     let row=document.createElement('div');row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--sep)';
     let badge=hasReasoning?' <span style="font-size:10px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:8px">推理优选</span>':'';
     let info=document.createElement('div');info.innerHTML='<b>'+p.providerName+badge+'</b><br><small style="color:var(--text2)">'+p.provider+' / '+cfg.modelName+'</small>';
-    let keyStatus=cfg.apiKey?'<span style="color:var(--success)">✅ 已配置</span>':'<span style="color:red">❌ 未配置</span>';
+    let keyStatus=cfg.apiKey?'<span style="color:var(--success)">已配置</span>':'<span style="color:red">未配置</span>';
     let btn=document.createElement('button');btn.className='top-btn';btn.textContent='切换';
-    btn.onclick=()=>{currentConfig.provider=p.provider;currentConfig.modelName=cfg.modelName;currentConfig.apiKey=cfg.apiKey;currentConfig.baseUrl=cfg.baseUrl||p.baseUrl;currentConfig.temperature=cfg.temperature||0.2;savedConfigs[p.provider]=Object.assign({},currentConfig);saveConfigs();applyCurrentConfig();closeModelConfig();showToast('✅ 已切换至 '+p.providerName)};
+    btn.onclick=()=>{currentConfig.provider=p.provider;currentConfig.modelName=cfg.modelName;currentConfig.apiKey=cfg.apiKey;currentConfig.baseUrl=cfg.baseUrl||p.baseUrl;currentConfig.temperature=cfg.temperature||0.2;savedConfigs[p.provider]=Object.assign({},currentConfig);saveConfigs();applyCurrentConfig();closeModelConfig();showToast('已切换至 '+p.providerName)};
     row.appendChild(info);let s=document.createElement('span');s.innerHTML=keyStatus;row.appendChild(s);row.appendChild(btn);
     list.appendChild(row);
   });
@@ -1084,19 +881,7 @@ function openModelConfig(){
 }
 function closeModelConfig(){document.getElementById('model-config-overlay').style.display='none'}
 
-function buildWelcomeCard(){
-  let stage=getStage();
-  let suggestions='';
-  let funcs='<span>🔍 解题</span><span>📖 公式查询</span><span>📝 错题整理</span><span>📊 知识点总结</span>';
-  if(stage==='primary'){
-    suggestions='<button onclick="quickSend(\'小明有15颗糖，吃掉7颗，还剩几颗？\')">🍬 加减法应用题</button><button onclick="quickSend(\'计算：8 × 9 = ？\')">✖ 乘法口诀</button><button onclick="quickSend(\'一个长方形长6cm宽4cm，面积是多少？\')">📐 几何面积计算</button>';
-  }else if(stage==='junior'){
-    suggestions='<button onclick="quickSend(\'解方程：x² + 3x - 10 = 0\')">解一元二次方程</button><button onclick="quickSend(\'证明：三角形内角和等于180°\')">几何证明题</button><button onclick="quickSend(\'求一次函数y=2x+1与y=-x+4的交点\')">函数交点</button>';
-  }else{
-    suggestions='<button onclick="quickSend(\'求函数 f(x)=x³-3x 的单调区间和极值\')">导数求单调区间</button><button onclick="quickSend(\'求等差数列的第n项公式及前n项和\')">数列求通项</button><button onclick="quickSend(\'已知椭圆方程，求焦点坐标\')">圆锥曲线</button>';
-  }
-  return '<div class="welcome-card"><div class="wicon-row"><span class="wicon">🎓</span><span class="wbrand">苏巷雨</span></div><h2>智慧教学智能体</h2><p class="wsub">'+getStageLabel(stage)+'模式 · K12数学辅导'+(allowExtend?' · 🔓大学拓展':'')+'</p><p class="wdesc">函数 · 几何 · 导数 · 数列 · 方程 · 证明题<br>多厂商推理模型一键切换 | LaTeX公式实时渲染 | 分步解析</p><div class="quick-funcs">'+funcs+'</div><div class="suggestions" style="margin-top:18px">'+suggestions+'</div></div>';
-}
+function buildWelcomeCard(){return ''}
 
 // ===== 动态快捷栏 =====
 function updateQuickBar(){
@@ -1104,26 +889,13 @@ function updateQuickBar(){
   let stage=getStage();
   let extend=allowExtend;
   if(stage==='primary'){
-    bar.innerHTML='<button onclick="appendCommand(\'请分步详细讲解这道题，用生活化例子\')" class="math-action">📋 分步讲解</button><button onclick="appendCommand(\'请用一个生活化的例子来解释\')" class="math-action">🍎 生活化举例</button><button onclick="appendCommand(\'请画图讲解这道题\')" class="math-action">🎨 画图讲解</button><button onclick="appendCommand(\'请出1道同类型的基础练习题\')" class="math-action">📝 同类练习</button><button onclick="appendCommand(\'请提醒这道题的口算易错点\')">⚠ 易错口算提醒</button>';
+    bar.innerHTML='<button onclick="appendCommand(\'请分步详细讲解这道题，用生活化例子\')" class="math-action">分步讲解</button><button onclick="appendCommand(\'请用一个生活化的例子来解释\')" class="math-action">生活化举例</button><button onclick="appendCommand(\'请画图讲解这道题\')" class="math-action">画图讲解</button><button onclick="appendCommand(\'请出1道同类型的基础练习题\')" class="math-action">同类练习</button><button onclick="appendCommand(\'请提醒这道题的口算易错点\')">易错口算提醒</button>';
   }else if(extend){
-    bar.innerHTML='<button onclick="appendCommand(\'请给出课内标准解法\')" class="math-action">📖 课内标准解法</button><button onclick="appendCommand(\'请用大学数学知识推导拓展\')" class="math-action">📚 大学拓展推导</button><button onclick="appendCommand(\'请出一题竞赛难度的同类题\')" class="math-action">🏆 竞赛同类难题</button><button onclick="appendCommand(\'请深挖这道题的底层数学原理\')" class="math-action">🔬 底层原理深挖</button><button onclick="appendCommand(\'请总结拓展知识点\')">💡 拓展知识点总结</button>';
+    bar.innerHTML='<button onclick="appendCommand(\'请给出课内标准解法\')" class="math-action">课内标准解法</button><button onclick="appendCommand(\'请用大学数学知识推导拓展\')" class="math-action">大学拓展推导</button><button onclick="appendCommand(\'请出一题竞赛难度的同类题\')" class="math-action">竞赛同类难题</button><button onclick="appendCommand(\'请深挖这道题的底层数学原理\')" class="math-action">底层原理深挖</button><button onclick="appendCommand(\'请总结拓展知识点\')">拓展知识点总结</button>';
   }else{
-    bar.innerHTML='<button onclick="appendCommand(\'请分步详细解这道题，标注每一步的公式和定理\')" class="math-action">📋 分步详细解</button><button onclick="appendCommand(\'请标注这道题的易错点和常见错误\')" class="math-action">⚠ 标注易错点</button><button onclick="appendCommand(\'请生成1道同类变式练习题，并给出解答\')" class="math-action">🔄 生成变式题</button><button onclick="appendCommand(\'请总结这类题目的通用解题方法和套路\')" class="math-action">💡 总结解题方法</button><button onclick="appendCommand(\'请梳理本题涉及的所有知识点，并标注对应的课本考点\')">📚 梳理知识点</button>';
+    bar.innerHTML='<button onclick="appendCommand(\'请分步详细解这道题，标注每一步的公式和定理\')" class="math-action">分步详细解</button><button onclick="appendCommand(\'请标注这道题的易错点和常见错误\')" class="math-action">标注易错点</button><button onclick="appendCommand(\'请生成1道同类变式练习题，并给出解答\')" class="math-action">生成变式题</button><button onclick="appendCommand(\'请总结这类题目的通用解题方法和套路\')" class="math-action">总结解题方法</button><button onclick="appendCommand(\'请梳理本题涉及的所有知识点，并标注对应的课本考点\')">梳理知识点</button>';
   }
 }
-function updatePlaceholder(){
-  let stage=getStage();
-  let extend=allowExtend;
-  let box=document.getElementById('input-box');
-  if(stage==='primary'){
-    box.placeholder='输入口算题、应用题、图形数学题...';
-  }else if(extend){
-    box.placeholder='可提问课内题，也可查询微积分、线性代数等大学拓展知识...';
-  }else{
-    box.placeholder='输入数学题目、知识点疑问（如：二次函数顶点式解题方法）';
-  }
-}
-
 // ===== 知识库管理 =====
 let ragEnabled=localStorage.getItem('ragEnabled')==='1';
 if(ragEnabled){document.getElementById('rag-toggle').checked=true;updateRagToggleStyle()}
@@ -1135,7 +907,7 @@ function updateRagToggleStyle(){
 }
 async function updateKbStatus(){
   try{let r=await fetch('/api/knowledge/stats');let s=await r.json();
-    document.getElementById('kb-status').innerHTML='📊 '+s.totalChunks+' 切片 / '+s.totalDocuments+' 文档'+(ragEnabled?' <span style="color:var(--primary)">●RAG开</span>':'');
+    document.getElementById('kb-status').innerHTML=s.totalChunks+' 切片 / '+s.totalDocuments+' 文档'+(ragEnabled?' <span style="color:var(--primary)">RAG开</span>':'');
   }catch(e){document.getElementById('kb-status').textContent='服务未就绪'}
 }
 async function openKbManager(){
@@ -1151,18 +923,56 @@ function closeKbManager(){document.getElementById('kb-overlay').style.display='n
 async function refreshKbStats(){
   try{let r=await fetch('/api/knowledge/stats');let s=await r.json();
     document.getElementById('kb-stats-panel').innerHTML=
-      '<span>📄 '+s.totalDocuments+' 文档</span><span>🧩 '+s.totalChunks+' 切片</span>'+
-      '<span>🏫 初中:'+(s.juniorCount||0)+'</span><span>🎓 高中:'+(s.seniorCount||0)+'</span>'+
-      '<span>💾 '+(s.diskSizeBytes/1024).toFixed(1)+' KB</span>'+
-      (s.lastIndexedTime?'<span>🕐 '+s.lastIndexedTime+'</span>':'');
+      '<span>'+s.totalDocuments+' 文档</span><span>'+s.totalChunks+' 切片</span>'+
+      '<span>初中:'+(s.juniorCount||0)+'</span><span>高中:'+(s.seniorCount||0)+'</span>'+
+      '<span>'+(s.diskSizeBytes/1024).toFixed(1)+' KB</span>'+
+      (s.lastIndexedTime?'<span>'+s.lastIndexedTime+'</span>':'');
   }catch(e){}
 }
+let kbFileListCache=[];
 async function refreshKbFileList(){
   try{let r=await fetch('/api/knowledge/pdf-list');let files=await r.json();
+    kbFileListCache=files||[];
     let list=document.getElementById('kb-file-list');
-    if(!files.length){list.innerHTML='<div class="empty-hint">📭 知识库目录为空<br>请将PDF教材/题库放入目录后刷新</div>';return}
-    list.innerHTML=files.map(f=>'<div class="kb-file-item"><span class="fn">📄 '+f.name+'</span><span class="fs">'+(f.size/1024).toFixed(1)+' KB</span></div>').join('');
+    if(!files.length){list.innerHTML='<div class="empty-hint">知识库目录为空<br>可上传PDF或放入目录后刷新</div>';return}
+    list.innerHTML=files.map((f,i)=>'<div class="kb-file-item"><span class="fn">'+f.name+'</span><span class="fs">'+(f.size/1024).toFixed(1)+' KB</span><span class="kb-del" onclick="event.stopPropagation();removeKbDocumentIdx('+i+')">删除</span></div>').join('');
   }catch(e){document.getElementById('kb-file-list').innerHTML='<div class="empty-hint">加载失败</div>'}
+}
+async function uploadKbFiles(){
+  let input=document.getElementById('kb-upload-input');
+  if(!input.files.length){showToast('请先选择PDF文件');return}
+  let files=[...input.files];
+  let log=document.getElementById('kb-build-log');
+  log.style.display='block';log.innerHTML='正在上传并索引 '+files.length+' 个文件...\n';
+  let stageVal=document.getElementById('kb-stage-sel').value||'';
+  let ok=0;
+  for(let f of files){
+    try{
+      let fd=new FormData();
+      fd.append('file',f);
+      fd.append('stage',stageVal);
+      fd.append('apiKey',currentConfig.apiKey||'');
+      fd.append('baseUrl',currentConfig.baseUrl||'');
+      let r=await fetch('/api/knowledge/upload',{method:'POST',body:fd});
+      let d;
+      try{d=await r.json()}
+      catch(e){throw new Error('服务器中断了响应（文件可能超限，建议放入知识库目录后批量索引）')}
+      if(d.success){log.innerHTML+='成功: '+f.name+'（'+d.stage+'，'+d.chunkCount+' 块）\n';ok++}
+      else{log.innerHTML+='失败: '+f.name+' - '+(d.error||'未知错误')+'\n'}
+    }catch(e){log.innerHTML+='失败: '+f.name+' - '+e.message+'\n'}
+  }
+  input.value='';document.getElementById('kb-upload-label').textContent='';
+  await refreshKbFileList();await refreshKbStats();await updateKbStatus();
+  showToast('上传完成 '+ok+'/'+files.length);
+}
+function removeKbDocumentIdx(i){
+  let f=kbFileListCache[i];if(!f)return;
+  if(!confirm('确定删除此文档的索引和源文件？\n'+f.name))return;
+  fetch('/api/knowledge/document',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({fileName:f.name,deleteSource:'true'})})
+    .then(function(){return refreshKbFileList()})
+    .then(function(){return refreshKbStats()})
+    .then(function(){updateKbStatus();showToast('已删除')})
+    ['catch'](function(){showToast('删除失败')});
 }
 let buildPollTimer=null;
 async function buildKbIndex(){
@@ -1170,7 +980,7 @@ async function buildKbIndex(){
   let bar=document.getElementById('kb-progress-bar');
   let fill=document.getElementById('kb-progress-fill');
   let txt=document.getElementById('kb-progress-text');
-  log.style.display='block';log.innerHTML='🔄 正在批量索引...\n';
+  log.style.display='block';log.innerHTML='正在批量索引...\n';
   bar.style.display='block';txt.style.display='block';fill.style.width='0%';
   try{
     let dirResp=await fetch('/api/knowledge/dir');let dirData=await dirResp.json();
@@ -1188,16 +998,16 @@ async function buildKbIndex(){
     clearInterval(buildPollTimer);buildPollTimer=null;
     let result=await r.json();
     if(result.success){
-      log.innerHTML+='✅ 索引完成！成功 '+result.successFiles+'/'+result.totalFiles+' 个文件\n';
-      if(result.details){for(let[k,v]of Object.entries(result.details)){log.innerHTML+=('  '+(v>0?'✅':'❌')+' '+k+': '+(v>0?v+' 块':'失败')+'\n')}}
+      log.innerHTML+='索引完成！成功 '+result.successFiles+'/'+result.totalFiles+' 个文件\n';
+      if(result.details){for(let[k,v]of Object.entries(result.details)){log.innerHTML+=('  '+k+': '+(v>0?v+' 块':'失败')+'\n')}}
       fill.style.width='100%';txt.textContent='索引完成';
       await refreshKbFileList();await refreshKbStats();await updateKbStatus();
-    }else{log.innerHTML+='❌ '+result.error+'\n';fill.style.width='0%'}
-  }catch(e){log.innerHTML+='❌ 索引失败: '+e.message+'\n';clearInterval(buildPollTimer)}
+    }else{log.innerHTML+='失败: '+result.error+'\n';fill.style.width='0%'}
+  }catch(e){log.innerHTML+='索引失败: '+e.message+'\n';clearInterval(buildPollTimer)}
   setTimeout(()=>{bar.style.display='none';txt.style.display='none'},3000);
 }
 async function buildKbIncremental(){
-  let log=document.getElementById('kb-build-log');log.style.display='block';log.innerHTML='📥 正在增量索引（跳过已处理文件）...\n';
+  let log=document.getElementById('kb-build-log');log.style.display='block';log.innerHTML='正在增量索引（跳过已处理文件）...\n';
   try{
     let dirResp=await fetch('/api/knowledge/dir');let dirData=await dirResp.json();
     let stageVal=document.getElementById('kb-stage-sel').value;
@@ -1206,10 +1016,10 @@ async function buildKbIncremental(){
     let r=await fetch('/api/knowledge/index/incremental',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     let result=await r.json();
     if(result.success){
-      log.innerHTML+='✅ 增量完成！新增 '+result.newFiles+' 文件，跳过 '+result.skippedFiles+'\n';
+      log.innerHTML+='增量完成！新增 '+result.newFiles+' 文件，跳过 '+result.skippedFiles+'\n';
       await refreshKbFileList();await refreshKbStats();await updateKbStatus();
-    }else{log.innerHTML+='❌ '+result.error+'\n'}
-  }catch(e){log.innerHTML+='❌ '+e.message+'\n'}
+    }else{log.innerHTML+='失败: '+result.error+'\n'}
+  }catch(e){log.innerHTML+='失败: '+e.message+'\n'}
 }
 async function configMathPix(){
   let appId=prompt('MathPix App ID (https://mathpix.com/ 注册获取):');
@@ -1221,25 +1031,25 @@ async function configMathPix(){
 }
 async function retryFailedWithOcr(){
   if(!confirm('将使用OCR服务重试所有失败文件。请确保Python OCR服务已启动(127.0.0.1:8001)。继续？'))return;
-  let log=document.getElementById('kb-build-log');log.style.display='block';log.innerHTML='📷 正在OCR重试失败文件...\n';
+  let log=document.getElementById('kb-build-log');log.style.display='block';log.innerHTML='正在OCR重试失败文件...\n';
   let bar=document.getElementById('kb-progress-bar');bar.style.display='block';
   let fill=document.getElementById('kb-progress-fill');fill.style.width='10%';
   try{
     let dirResp=await fetch('/api/knowledge/dir');let dirData=await dirResp.json();
     let r=await fetch('/api/knowledge/retry-ocr',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dirPath:dirData.directory})});
     let result=await r.json();
-    if(result.success){log.innerHTML+='✅ OCR重试完成！新增 '+result.newFiles+' 文件\n';fill.style.width='100%'}
-    else{log.innerHTML+='❌ '+result.error+'\n'}
+    if(result.success){log.innerHTML+='OCR重试完成！新增 '+result.newFiles+' 文件\n';fill.style.width='100%'}
+    else{log.innerHTML+='失败: '+result.error+'\n'}
     await refreshKbStats();await updateKbStatus();await loadFailedFiles();
-  }catch(e){log.innerHTML+='❌ '+e.message+'\n'}
+  }catch(e){log.innerHTML+='失败: '+e.message+'\n'}
   setTimeout(()=>bar.style.display='none',3000);
 }
 async function loadFailedFiles(){
   let list=document.getElementById('kb-failed-list');list.style.display='block';
   try{
     let r=await fetch('/api/knowledge/failed-files');let d=await r.json();
-    if(!d.files||!d.files.length){list.innerHTML='<div class="empty-hint">✅ 无失败文件</div>';return}
-    list.innerHTML='<b>⚠ 失败文件 ('+d.count+'):</b> '+d.files.map(f=>'<div style="padding:2px 0;border-bottom:1px solid var(--sep)"><span>❌ '+f.fileName+'</span><span style="color:var(--text2);font-size:10px;margin-left:8px">'+f.reason+'</span></div>').join('');
+    if(!d.files||!d.files.length){list.innerHTML='<div class="empty-hint">无失败文件</div>';return}
+    list.innerHTML='<b>失败文件 ('+d.count+'):</b> '+d.files.map(f=>'<div style="padding:2px 0;border-bottom:1px solid var(--sep)"><span>'+f.fileName+'</span><span style="color:var(--text2);font-size:10px;margin-left:8px">'+f.reason+'</span></div>').join('');
   }catch(e){list.innerHTML='<div class="empty-hint">加载失败</div>'}
 }
 async function resetKbCheckpoint(){
@@ -1269,13 +1079,10 @@ async function clearKb(){
   updateExtendToggleStyle();
   // 恢复侧边栏
   let sbState=localStorage.getItem('sidebarOpen');
-  if(sbState==='0'){sidebarOpen=false;document.getElementById('sidebar').classList.add('collapsed');document.getElementById('sidebar-toggle').textContent='▶'}
+  if(sbState==='0'){sidebarOpen=false;document.getElementById('sidebar').classList.add('collapsed');document.getElementById('sidebar-toggle').textContent='教学工具'}
   // 渲染数据面板
-  renderKnowledgePoints();
-  renderFormulas();
   renderErrorBook();
   updateQuickBar();
-  updatePlaceholder();
   // 加载历史会话列表
   loadSessionList();
   // 加载模型与会话
@@ -1298,7 +1105,7 @@ function loadSessionList(){
 function renderSessionList(sessions){
   var list=document.getElementById('history-list');
   if(!sessions||!sessions.length){
-    list.innerHTML='<div class="empty-hint">📭 暂无历史对话<br><span style="font-size:10px">发送第一条消息自动保存</span></div>';
+    list.innerHTML='<div class="empty-hint">暂无历史对话<br><span style="font-size:10px">发送第一条消息自动保存</span></div>';
     return;
   }
   list.innerHTML=sessions.map(function(s){
@@ -1306,7 +1113,7 @@ function renderSessionList(sessions){
     var time=s.updateTime?s.updateTime.substring(0,16):'';
     var active=s.sessionId===currentDbSessionId?' active':'';
     return'<div class="history-item'+active+'" onclick="switchSession('+s.sessionId+')" title="'+title+'">'
-      +'<span class="hdel" onclick="event.stopPropagation();deleteSession('+s.sessionId+')">✕</span>'
+      +'<span class="hdel" onclick="event.stopPropagation();deleteSession('+s.sessionId+')">删除</span>'
       +'<div class="htitle">'+title+'</div>'
       +'<div class="htime">'+time+'</div>'
       +'</div>';
@@ -1318,7 +1125,7 @@ function createNewSession(){
   stopGeneration();
   fetch('/api/chat',{method:'DELETE'});
   document.getElementById('chat-list').innerHTML=buildWelcomeCard();
-  lastAiFullText='';lastThinkFullText='';hideFormulaPopup();
+  lastAiFullText='';lastThinkFullText='';
   // 再异步创建数据库会话
   fetch('/api/history/session/create',{
     method:'POST',
@@ -1328,7 +1135,7 @@ function createNewSession(){
     currentDbSessionId=data.sessionId;
     localStorage.setItem('currentDbSessionId',currentDbSessionId);
     loadSessionList();
-    showToast('✅ 新对话已创建');
+    showToast('新对话已创建');
   })['catch'](function(e){
     showToast('创建失败，请重试');
   });
@@ -1340,7 +1147,7 @@ function switchSession(sessionId){
   localStorage.setItem('currentDbSessionId',sessionId);
   loadSessionList();
   // 加载历史消息
-  document.getElementById('chat-list').innerHTML='<div class="empty-hint">⏳ 加载中...</div>';
+  document.getElementById('chat-list').innerHTML='<div class="empty-hint">加载中...</div>';
   fetch('/api/history/messages/'+sessionId)
     .then(function(r){return r.json()})
     .then(function(msgs){
@@ -1432,7 +1239,7 @@ addAiBubble=function(){
   if(!row)return;
   var b=row.querySelector('.bubble');
   // 注入思考面板DOM
-  b.innerHTML='<div class="think-toggle-bar" id="think-toggle-bar" style="display:none"><button class="toggle-think-btn" onclick="toggleThink()">📝 查看AI推理过程</button></div><div class="think-collapse collapse-wrap" id="think-panel"><div class="think-block"><div class="think-title">🧠 AI推理草稿</div><div class="think-content" id="think-content"></div></div></div><div class="answer-block" id="answer-block">'+b.innerHTML+'</div>';
+  b.innerHTML='<div class="think-toggle-bar" id="think-toggle-bar" style="display:none"><button class="toggle-think-btn" onclick="toggleThink()">查看AI推理过程</button></div><div class="think-collapse collapse-wrap" id="think-panel"><div class="think-block"><div class="think-title">AI推理草稿</div><div class="think-content" id="think-content"></div></div></div><div class="answer-block" id="answer-block">'+b.innerHTML+'</div>';
 };
 
 function updateThinkPanel(text){
@@ -1447,7 +1254,7 @@ function toggleThink(){
   var btn=document.querySelector('.toggle-think-btn');
   if(!panel||!btn)return;
   var isOpen=panel.classList.toggle('open');
-  btn.textContent=isOpen?'📝 收起推理过程':'📝 查看AI推理过程';
+  btn.textContent=isOpen?'收起推理过程':'查看AI推理过程';
   // 首次展开时渲染公式
   if(isOpen){
     var tc=document.getElementById('think-content');
@@ -1472,7 +1279,7 @@ function toggleThink(){
       setTimeout(function(){
         var panel=document.getElementById('think-panel');
         var btn=document.querySelector('.toggle-think-btn');
-        if(panel&&btn){panel.classList.add('open');btn.textContent='📝 收起推理过程';}
+        if(panel&&btn){panel.classList.add('open');btn.textContent='收起推理过程';}
       },300);
     }
   }catch(e){}
@@ -1487,7 +1294,7 @@ addMessage=function(text,sender,thinkRaw){
     var lastB=bubbles[bubbles.length-1];
     if(lastB&&!lastB.querySelector('.think-toggle-bar')){
       var origHtml=lastB.innerHTML;
-      lastB.innerHTML='<div class="think-toggle-bar"><button class="toggle-think-btn" onclick="toggleThink()">📝 查看AI推理过程</button></div><div class="think-collapse collapse-wrap open"><div class="think-block"><div class="think-title">🧠 AI推理草稿</div><div class="think-content">'+escapeHtml(thinkRaw)+'</div></div></div><div class="answer-block">'+origHtml+'</div>';
+      lastB.innerHTML='<div class="think-toggle-bar"><button class="toggle-think-btn" onclick="toggleThink()">查看AI推理过程</button></div><div class="think-collapse collapse-wrap open"><div class="think-block"><div class="think-title">AI推理草稿</div><div class="think-content">'+escapeHtml(thinkRaw)+'</div></div></div><div class="answer-block">'+origHtml+'</div>';
     }
   }
 };

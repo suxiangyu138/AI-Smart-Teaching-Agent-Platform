@@ -26,6 +26,8 @@ public class ScanOcrClient {
     private static final String HEALTH_URL = "http://127.0.0.1:8001/health";
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final HttpClient HTTP = HttpClient.newBuilder()
+            // 强制 HTTP/1.1：uvicorn 无法解析 Java 默认的 h2c 升级探测，会导致请求体丢失（empty body）
+            .version(HttpClient.Version.HTTP_1_1)
             .connectTimeout(Duration.ofSeconds(15))
             .build();
 

@@ -2,6 +2,7 @@ package com.chatbot;
 
 import com.chatbot.history.ChatHistoryService;
 import com.chatbot.model.UnifiedChatRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -60,44 +61,55 @@ public class ChatController {
         return Map.of("sid", chatService.createSession());
     }
 
-    // ========== 对话历史持久化接口 ==========
+    // ========== 对话历史持久化接口（sid cookie 作为会话归属标识） ==========
 
-    /** 创建数据库会话 */
+    /** 创建数据库会话（无 sid cookie 的客户端由服务端生成归属并回写 cookie） */
     @PostMapping("/history/session/create")
-    public Map<String, Object> createDbSession(@RequestBody Map<String, String> body) {
+    public Map<String, Object> createDbSession(@RequestBody Map<String, String> body,
+            @CookieValue(value = "sid", defaultValue = "") String sid,
+            HttpServletResponse response) {
+        String effectiveSid = sid;
+        if (effectiveSid.isBlank()) {
+            effectiveSid = UUID.randomUUID().toString();
+            response.addHeader("Set-Cookie", "sid=" + effectiveSid + "; Path=/");
+        }
         Long id = historyService.createSession(
-                body.get("title"), body.get("stage"), body.get("modelName"));
+                body.get("title"), body.get("stage"), body.get("modelName"), effectiveSid);
         return Map.of("sessionId", id);
     }
 
-    /** 查询历史会话列表 */
+    /** 查询历史会话列表（仅返回归属当前 sid 的会话） */
     @GetMapping("/history/sessions")
     public List<Map<String, Object>> listSessions(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        return historyService.listSessions(page, size);
+            @RequestParam(defaultValue = "20") int size,
+            @CookieValue(value = "sid", defaultValue = "") String sid) {
+        return historyService.listSessions(page, size, sid);
     }
 
-    /** 删除会话（逻辑删除） */
+    /** 删除会话（逻辑删除，仅归属会话可删） */
     @DeleteMapping("/history/session/{sessionId}")
-    public Map<String, String> deleteSession(@PathVariable Long sessionId) {
-        historyService.deleteSession(sessionId);
+    public Map<String, String> deleteSession(@PathVariable Long sessionId,
+            @CookieValue(value = "sid", defaultValue = "") String sid) {
+        historyService.deleteSession(sessionId, sid);
         return Map.of("status", "ok");
     }
 
-    /** 重命名会话 */
+    /** 重命名会话（仅归属会话可改） */
     @PutMapping("/history/session/rename")
-    public Map<String, String> renameSession(@RequestBody Map<String, Object> body) {
+    public Map<String, String> renameSession(@RequestBody Map<String, Object> body,
+            @CookieValue(value = "sid", defaultValue = "") String sid) {
         Long id = Long.valueOf(body.get("sessionId").toString());
         String title = (String) body.get("title");
-        historyService.renameSession(id, title);
+        historyService.renameSession(id, title, sid);
         return Map.of("status", "ok");
     }
 
-    /** 获取会话全部消息 */
+    /** 获取会话全部消息（非归属会话返回空） */
     @GetMapping("/history/messages/{sessionId}")
-    public List<Map<String, String>> getMessages(@PathVariable Long sessionId) {
-        return historyService.getMessages(sessionId);
+    public List<Map<String, String>> getMessages(@PathVariable Long sessionId,
+            @CookieValue(value = "sid", defaultValue = "") String sid) {
+        return historyService.getMessages(sessionId, sid);
     }
 
     /** 获取所有厂商 + 模型列表 */

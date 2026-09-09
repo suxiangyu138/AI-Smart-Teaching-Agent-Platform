@@ -4,7 +4,7 @@ import com.chatbot.model.UnifiedChatRequest;
 import com.chatbot.rag.document.MathChunkingStrategy;
 import com.chatbot.rag.embedding.EmbeddingService;
 import com.chatbot.rag.model.DocumentChunk;
-import com.chatbot.rag.vector.InMemoryVectorStore;
+import com.chatbot.rag.vector.LuceneVectorStore;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -56,7 +56,7 @@ public class WebCrawlerService {
 
     private final MathChunkingStrategy chunkingStrategy;
     private final EmbeddingService embeddingService;
-    private final InMemoryVectorStore vectorStore;
+    private final LuceneVectorStore vectorStore;
     private final PlaywrightClient playwrightClient;
 
     /** 内容哈希去重 */
@@ -78,7 +78,7 @@ public class WebCrawlerService {
 
     public WebCrawlerService(MathChunkingStrategy chunkingStrategy,
                              EmbeddingService embeddingService,
-                             InMemoryVectorStore vectorStore,
+                             LuceneVectorStore vectorStore,
                              PlaywrightClient playwrightClient) {
         this.chunkingStrategy = chunkingStrategy;
         this.embeddingService = embeddingService;
@@ -152,7 +152,8 @@ public class WebCrawlerService {
             throw new IOException("分块结果为空");
         }
         List<String> chunkTexts = chunks.stream().map(DocumentChunk::getContent).collect(Collectors.toList());
-        List<float[]> embeddings = embeddingService.embedBatch(chunkTexts, apiKey, baseUrl);
+        // 统一本地向量（维度与索引一致）
+        List<float[]> embeddings = embeddingService.embedBatch(chunkTexts, null, null);
         vectorStore.indexDocuments(chunks, embeddings, sourceFile);
         vectorStore.persist();
         return chunks.size();
@@ -564,15 +565,18 @@ public class WebCrawlerService {
             return;
         }
 
-        // 向量嵌入
+        // 向量嵌入：统一本地向量（维度与索引一致）
         List<String> chunkTexts = chunks.stream()
                 .map(DocumentChunk::getContent)
                 .collect(Collectors.toList());
-        List<float[]> embeddings = embeddingService.embedBatch(
-                chunkTexts, req.getApiKey(), req.getBaseUrl());
+        List<float[]> embeddings = embeddingService.embedBatch(chunkTexts, null, null);
 
         // 入库
-        vectorStore.indexDocuments(chunks, embeddings, sourceFile);
+        try {
+            vectorStore.indexDocuments(chunks, embeddings, sourceFile);
+        } catch (IOException e) {
+            System.err.println("[RAG] 爬虫内容入库失败: " + e.getMessage());
+        }
     }
 
     // ================================================================

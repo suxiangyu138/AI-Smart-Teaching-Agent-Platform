@@ -44,12 +44,30 @@
             <artifactId>pdfbox</artifactId>
             <version>3.0.4</version>
         </dependency>
+        <!-- 扫描版 PDF 的 JBIG2 压缩图片解码（高等数学.pdf 等书籍依赖） -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>jbig2-imageio</artifactId>
+            <version>3.0.4</version>
+        </dependency>
 
         <!-- 网页爬虫：HTML 解析 -->
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
             <version>1.18.3</version>
+        </dependency>
+
+        <!-- RAG 检索引擎：Lucene 磁盘索引（BM25 全文 + HNSW 向量混合检索，支持百万级切片） -->
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-core</artifactId>
+            <version>9.12.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-analysis-smartcn</artifactId>
+            <version>9.12.1</version>
         </dependency>
 
         <!-- 对话历史持久化：JPA + H2 嵌入式数据库 -->

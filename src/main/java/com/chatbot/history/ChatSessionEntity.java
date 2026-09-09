@@ -26,6 +26,10 @@ public class ChatSessionEntity {
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 
+    /** 会话归属标识（浏览器 sid cookie）。为空表示历史遗留数据，对所有客户端可见 */
+    @Column(length = 64)
+    private String ownerSid;
+
     @Column(nullable = false)
     private boolean deleted = false;
 
@@ -54,4 +58,7 @@ public class ChatSessionEntity {
     public void setUpdateTime(LocalDateTime v) { updateTime = v; }
     public boolean isDeleted() { return deleted; }
     public void setDeleted(boolean v) { deleted = v; }
+
+    public String getOwnerSid() { return ownerSid; }
+    public void setOwnerSid(String v) { ownerSid = v; }
 }

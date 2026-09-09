@@ -46,8 +46,34 @@ public class ChatService {
 
     /** 并发流式聊天 + 数据库持久化 */
     public SseEmitter chat(String memSessionId, Long dbSessionId, UnifiedChatRequest req) {
-        List<ChatMessage> hist = getSession(memSessionId);
         String userContent = lastUserContent(req);
+
+        // 数据库会话：以数据库历史为上下文，保证多会话严格隔离、页面刷新后上下文连续。
+        // 归属校验：客户端传来的会话ID必须属于当前 sid，否则降级为内存模式（不读也不写）
+        Long effectiveDbId = (dbSessionId != null
+                && historyService.isSessionOwned(dbSessionId, memSessionId))
+                ? dbSessionId : null;
+
+        List<ChatMessage> hist;
+        if (effectiveDbId != null) {
+            List<ChatMessage> dbHist = new ArrayList<>();
+            List<Map<String, String>> dbMsgs = historyService.getMessages(effectiveDbId, memSessionId);
+            int from = Math.max(0, dbMsgs.size() - (MAX_HISTORY - 1)); // 只带最近20条
+            for (int i = from; i < dbMsgs.size(); i++) {
+                Map<String, String> m = dbMsgs.get(i);
+                String content = m.get("content");
+                if (content == null || content.isBlank()) {
+                    continue;
+                }
+                ChatMessage.Role role = "user".equals(m.get("role"))
+                        ? ChatMessage.Role.USER : ChatMessage.Role.ASSISTANT;
+                dbHist.add(new ChatMessage(role, content));
+            }
+            hist = dbHist;
+            sessions.put(memSessionId, hist); // 同步内存会话，避免与旧内存历史混用
+        } else {
+            hist = getSession(memSessionId);
+        }
         hist.add(new ChatMessage(ChatMessage.Role.USER, userContent));
 
         req.setMessages(buildMessages(req, hist));
@@ -60,7 +86,7 @@ public class ChatService {
         StringBuilder thinkBuf = new StringBuilder();
 
         // 持久化用户消息
-        final Long finalDbId = dbSessionId;
+        final Long finalDbId = effectiveDbId;
         if (finalDbId != null) {
             historyService.saveMessage(finalDbId, "user", userContent);
             historyService.updateSessionMeta(finalDbId,
@@ -158,7 +184,7 @@ public class ChatService {
 
         if (allowExtend) {
             sb.append("「大学拓展模式」已开启。可在课内标准解法之外，");
-            sb.append("补充大学数学视角的底层原理推导，请明确标注「📚拓展知识（超K12课内，选学）」。\n");
+            sb.append("补充大学数学视角的底层原理推导，请明确标注「拓展知识（超K12课内，选学）」。\n");
             sb.append("输出时请分层：先给课内标准答案，再附拓展内容。\n");
         }
 
@@ -232,7 +258,8 @@ public class ChatService {
     }
 
     public String createSession() {
-        return UUID.randomUUID().toString().substring(0, 8);
+        // 完整 UUID 作为归属标识：8 位截断易被遍历猜测
+        return UUID.randomUUID().toString();
     }
 
     private List<ChatMessage> getSession(String sessionId) {

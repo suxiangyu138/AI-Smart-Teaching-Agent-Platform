@@ -24,7 +24,7 @@ def get_ocr():
     if _ocr is None:
         logger.info("Loading PaddleOCR...")
         from paddleocr import PaddleOCR
-        _ocr = PaddleOCR(use_angle_cls=True, lang="ch", use_gpu=False)
+        _ocr = PaddleOCR(use_angle_cls=True, lang="ch", device="cpu")
         logger.info("PaddleOCR loaded")
     return _ocr
 
@@ -57,15 +57,23 @@ async def ocr_page(request: Request):
             return {"page_content": "", "success": False, "error": "empty body"}
         img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
 
-        # 1. PaddleOCR 识别中文文字
+        # 1. PaddleOCR 识别中文文字（兼容 2.x/3.x 两种返回格式）
         text_lines = []
         try:
             ocr = get_ocr()
-            result = ocr.ocr(img, cls=True)
-            if result and result[0]:
-                for line in result[0]:
-                    if line and len(line) > 1:
-                        text_lines.append(line[1][0])
+            result = ocr.predict(img)
+            if result:
+                r0 = result[0]
+                if isinstance(r0, dict) and "rec_texts" in r0:
+                    # PaddleOCR 3.x: {"rec_texts": [...], "rec_scores": [...]}
+                    for t in r0.get("rec_texts", []) or []:
+                        if t and t.strip():
+                            text_lines.append(t)
+                elif isinstance(r0, list):
+                    # PaddleOCR 2.x: [[box, (text, score)], ...]
+                    for line in r0:
+                        if line and len(line) > 1:
+                            text_lines.append(line[1][0])
         except Exception as e:
             logger.error(f"OCR failed: {e}")
             text_lines.append("[OCR识别失败]")

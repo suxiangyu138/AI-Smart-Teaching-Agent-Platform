@@ -4,10 +4,14 @@ import com.chatbot.model.UnifiedChatRequest;
 import com.chatbot.rag.document.MathPixClient;
 import com.chatbot.rag.document.ScanOcrClient;
 import com.chatbot.rag.model.KnowledgeBaseStats;
+import com.chatbot.rag.model.SearchResult;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -65,6 +69,38 @@ public class KnowledgeBaseController {
     }
 
     /**
+     * 检索调试接口：返回 top-K 分块及得分（不调用 LLM，用于评估检索质量）
+     * body: { query, stage?, allowUniversityExtend?, topK? }
+     */
+    @PostMapping("/search")
+    public Map<String, Object> searchDebug(@RequestBody Map<String, Object> body) {
+        String query = body.get("query") == null ? "" : body.get("query").toString();
+        if (query.isBlank()) {
+            return error("缺少 query 参数");
+        }
+        String stage = body.get("stage") == null
+                ? UnifiedChatRequest.STAGE_SENIOR : body.get("stage").toString();
+        boolean allowExtend = Boolean.TRUE.equals(body.get("allowUniversityExtend"));
+        int topK = body.get("topK") instanceof Number n
+                ? Math.max(1, Math.min(20, n.intValue())) : 5;
+
+        List<SearchResult> results = ragService.searchDebug(query, stage, allowExtend, topK);
+        return Map.of("success", true, "query", query, "stage", stage,
+                "count", results.size(), "results",
+                results.stream().map(r -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("score", String.format("%.1f%%", r.getScore() * 100));
+                    m.put("sourceFile", r.getSourceFile());
+                    m.put("chapter", r.getChunk().getChapterTitle() != null
+                            ? r.getChunk().getChapterTitle() : "");
+                    m.put("knowledgePoint", r.getChunk().getKnowledgePoint() != null
+                            ? r.getChunk().getKnowledgePoint() : "");
+                    m.put("snippet", r.getSnippet());
+                    return m;
+                }).toList());
+    }
+
+    /**
      * 获取已索引文件列表
      */
     @GetMapping("/files")
@@ -107,6 +143,61 @@ public class KnowledgeBaseController {
     }
 
     /**
+     * 上传 PDF 并立即索引（multipart/form-data）
+     * <p>
+     * 文件保存到知识库目录，学段可选（留空时从文件名自动识别）。
+     * apiKey/baseUrl 用于云端向量嵌入，留空则使用本地嵌入。
+     */
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Map<String, Object> uploadPdf(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "stage", defaultValue = "") String stage,
+            @RequestParam(value = "apiKey", defaultValue = "") String apiKey,
+            @RequestParam(value = "baseUrl", defaultValue = "") String baseUrl) {
+        if (file == null || file.isEmpty()) {
+            return error("未选择文件");
+        }
+        String original = file.getOriginalFilename();
+        if (original == null || !original.toLowerCase().endsWith(".pdf")) {
+            return error("仅支持 PDF 文件");
+        }
+
+        try {
+            Path kbDir = ragService.getKbDir();
+            // 清理文件名中的路径分隔符与非法字符，防止路径穿越
+            String safeName = original.replaceAll("[\\\\/:*?\"<>|]", "_");
+            Path target = kbDir.resolve(safeName);
+            if (Files.exists(target)) {
+                int dot = safeName.lastIndexOf('.');
+                String stem = dot > 0 ? safeName.substring(0, dot) : safeName;
+                target = kbDir.resolve(stem + "_" + System.currentTimeMillis() + ".pdf");
+            }
+            file.transferTo(target);
+
+            if (stage == null || stage.isBlank()) {
+                stage = detectStageFromPath(target);
+            }
+
+            int count = ragService.indexPdf(target, stage,
+                    apiKey.isBlank() ? null : apiKey,
+                    baseUrl.isBlank() ? null : baseUrl);
+            return Map.of("success", true,
+                    "fileName", target.getFileName().toString(),
+                    "stage", stage,
+                    "chunkCount", count,
+                    "message", "上传并索引成功，共 " + count + " 个切片");
+        } catch (Exception e) {
+            return error("上传或索引失败: " + e.getMessage());
+        }
+    }
+
+    /** 上传文件过大（multipart 解析在进入控制器前失败） */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public Map<String, Object> handleUploadTooLarge() {
+        return error("文件过大，单个 PDF 最大 50MB");
+    }
+
+    /**
      * 批量索引目录下所有 PDF
      */
     @PostMapping("/index/directory")
@@ -119,10 +210,10 @@ public class KnowledgeBaseController {
         if (!Files.isDirectory(path)) {
             return error("目录不存在: " + dirPath);
         }
-        // 从目录路径自动检测学段（如 ../primary/... → primary）
+        // 学段留空 → null，由 RagService 按文件名逐文件自动识别
         String stage = body.get("stage");
-        if (stage == null) {
-            stage = detectStageFromPath(path);
+        if (stage != null && stage.isBlank()) {
+            stage = null;
         }
 
         try {
@@ -132,13 +223,16 @@ public class KnowledgeBaseController {
             long failCount = stats.values().stream().filter(v -> v < 0).count();
             return Map.of("success", true,
                     "directory", dirPath,
-                    "autoStage", stage,
+                    "autoStage", stage != null ? stage : "按文件名自动识别",
                     "totalFiles", stats.size(),
                     "successFiles", successCount,
                     "failFiles", failCount,
                     "details", stats);
         } catch (Exception e) {
-            return error("批量索引失败: " + e.getMessage());
+            System.err.println("[RAG] 批量索引异常:");
+            e.printStackTrace();
+            return error("批量索引失败: " + (e.getMessage() != null
+                    ? e.getMessage() : e.getClass().getSimpleName()));
         }
     }
 
@@ -276,9 +370,10 @@ public class KnowledgeBaseController {
         if (!Files.isDirectory(path)) {
             return error("目录不存在: " + dirPath);
         }
+        // 学段留空 → null，由 RagService 按文件名逐文件自动识别
         String stage = body.get("stage");
-        if (stage == null) {
-            stage = detectStageFromPath(path);
+        if (stage != null && stage.isBlank()) {
+            stage = null;
         }
         try {
             Map<String, Integer> stats = ragService.indexDirectory(
@@ -287,7 +382,8 @@ public class KnowledgeBaseController {
             long skippedCount = stats.values().stream().filter(v -> v == 0).count();
             long failCount = stats.values().stream().filter(v -> v < 0).count();
             return Map.of("success", true, "directory", dirPath,
-                    "autoStage", stage, "newFiles", newCount,
+                    "autoStage", stage != null ? stage : "按文件名自动识别",
+                    "newFiles", newCount,
                     "skippedFiles", skippedCount, "failFiles", failCount,
                     "details", stats);
         } catch (Exception e) {
@@ -308,9 +404,10 @@ public class KnowledgeBaseController {
         if (!Files.isDirectory(path)) {
             return error("目录不存在: " + dirPath);
         }
+        // 学段留空 → null，由 RagService 按文件名逐文件自动识别
         String stage = body.get("stage");
-        if (stage == null) {
-            stage = detectStageFromPath(path);
+        if (stage != null && stage.isBlank()) {
+            stage = null;
         }
 
         // 先清空失败记录，让断点逻辑允许重试
@@ -337,6 +434,22 @@ public class KnowledgeBaseController {
         String fileName = body.get("fileName");
         if (fileName == null || fileName.isBlank()) {
             return error("缺少 fileName 参数");
+        }
+        // 可选：同时删除知识库目录内的源 PDF（针对上传的文件）
+        if ("true".equalsIgnoreCase(body.get("deleteSource"))) {
+            try {
+                Path kbDirAbs = ragService.getKbDir().toAbsolutePath().normalize();
+                Path target = kbDirAbs.resolve(
+                        Path.of(fileName).getFileName().toString()).normalize();
+                // 仅允许删除知识库目录内的文件，防止路径穿越
+                if (target.getParent() != null && target.getParent().equals(kbDirAbs)
+                        && Files.exists(target)) {
+                    Files.deleteIfExists(target);
+                }
+            } catch (IOException e) {
+                // 源文件删除失败不影响索引删除
+                System.err.println("[RAG] 删除源文件失败: " + e.getMessage());
+            }
         }
         ragService.removeDocument(fileName);
         return Map.of("success", true, "message", "已删除索引: " + fileName);

@@ -20,22 +20,34 @@ public class ChatHistoryService {
         this.messageRepo = messageRepo;
     }
 
-    /** 创建新会话，返回 sessionId */
+    /** 创建新会话，返回 sessionId（会话必须有归属，sid 为空则服务端生成） */
     @Transactional
-    public Long createSession(String title, String stage, String modelName) {
+    public Long createSession(String title, String stage, String modelName, String ownerSid) {
         ChatSessionEntity session = new ChatSessionEntity();
         session.setSessionTitle(title != null ? title : "新对话");
         session.setStageType(stage != null ? stage : "junior");
         session.setModelName(modelName != null ? modelName : "");
+        session.setOwnerSid(ownerSid != null && !ownerSid.isBlank()
+                ? ownerSid : UUID.randomUUID().toString());
         return sessionRepo.save(session).getSessionId();
     }
 
-    /** 分页查询会话列表（按更新时间倒序，排除已删除） */
-    public List<Map<String, Object>> listSessions(int page, int size) {
+    /** 会话归属校验：归属必须存在且匹配 sid。历史遗留的无归属会话对任何客户端不可见 */
+    public boolean isSessionOwned(Long sessionId, String sid) {
+        return sessionRepo.findById(sessionId)
+                .map(s -> s.getOwnerSid() != null && s.getOwnerSid().equals(sid))
+                .orElse(false);
+    }
+
+    /** 分页查询会话列表（按更新时间倒序，排除已删除；仅返回归属当前 sid 或历史遗留的会话） */
+    public List<Map<String, Object>> listSessions(int page, int size, String sid) {
         List<ChatSessionEntity> sessions = sessionRepo
                 .findByDeletedFalseOrderByUpdateTimeDesc(PageRequest.of(page, size));
         List<Map<String, Object>> result = new ArrayList<>();
         for (ChatSessionEntity s : sessions) {
+            if (s.getOwnerSid() == null || !s.getOwnerSid().equals(sid)) {
+                continue; // 无归属（历史遗留）或其他客户端的会话不可见
+            }
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("sessionId", s.getSessionId());
             m.put("title", s.getSessionTitle());
@@ -75,8 +87,11 @@ public class ChatHistoryService {
         });
     }
 
-    /** 获取某会话的全部消息 */
-    public List<Map<String, String>> getMessages(Long sessionId) {
+    /** 获取某会话的全部消息（非归属会话返回空列表） */
+    public List<Map<String, String>> getMessages(Long sessionId, String sid) {
+        if (!isSessionOwned(sessionId, sid)) {
+            return List.of();
+        }
         List<ChatMessageEntity> msgs = messageRepo.findBySessionIdOrderByCreateTimeAsc(sessionId);
         List<Map<String, String>> result = new ArrayList<>();
         for (ChatMessageEntity m : msgs) {
@@ -92,18 +107,24 @@ public class ChatHistoryService {
         return result;
     }
 
-    /** 逻辑删除会话 */
+    /** 逻辑删除会话（仅归属会话可删） */
     @Transactional
-    public void deleteSession(Long sessionId) {
+    public void deleteSession(Long sessionId, String sid) {
+        if (!isSessionOwned(sessionId, sid)) {
+            return;
+        }
         sessionRepo.findById(sessionId).ifPresent(s -> {
             s.setDeleted(true);
             sessionRepo.save(s);
         });
     }
 
-    /** 重命名会话 */
+    /** 重命名会话（仅归属会话可改） */
     @Transactional
-    public void renameSession(Long sessionId, String newTitle) {
+    public void renameSession(Long sessionId, String newTitle, String sid) {
+        if (!isSessionOwned(sessionId, sid)) {
+            return;
+        }
         sessionRepo.findById(sessionId).ifPresent(s -> {
             s.setSessionTitle(newTitle);
             sessionRepo.save(s);

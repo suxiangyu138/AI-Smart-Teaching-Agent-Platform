@@ -21,6 +21,9 @@ public class VectorDocument {
     private Integer pageNum;
     private boolean hasFormula;
     private int formulaCount;
+    /** 切片在原文档中的字符区间（用于相邻分块上下文扩展） */
+    private int startChar;
+    private int endChar;
 
     public VectorDocument() {}
 
@@ -59,4 +62,9 @@ public class VectorDocument {
     public void setHasFormula(boolean v) { hasFormula = v; }
     public int getFormulaCount() { return formulaCount; }
     public void setFormulaCount(int v) { formulaCount = v; }
+
+    public int getStartChar() { return startChar; }
+    public void setStartChar(int v) { startChar = v; }
+    public int getEndChar() { return endChar; }
+    public void setEndChar(int v) { endChar = v; }
 }
