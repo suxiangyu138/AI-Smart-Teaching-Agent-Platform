@@ -160,8 +160,8 @@ BaseModelAdapter (streamChat, extractContent, extractReasoning)
 - **JDK 25+** · **Maven 3.9+**
 
 ```bash
-git clone https://github.com/suxiangyu138/LlmChatBot_sxy.git
-cd LlmChatBot_sxy
+git clone https://github.com/suxiangyu138/AI-Smart-Teaching-Agent-Platform.git
+cd AI-Smart-Teaching-Agent-Platform
 mvn clean compile
 mvn spring-boot:run
 ```
