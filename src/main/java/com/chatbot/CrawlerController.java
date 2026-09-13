@@ -1,12 +1,10 @@
 package com.chatbot;
 
 import com.chatbot.rag.crawler.CrawlRequest;
+import com.chatbot.rag.crawler.UrlSafetyValidator;
 import com.chatbot.rag.crawler.WebCrawlerService;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.InetAddress;
-import java.net.URI;
-import java.net.UnknownHostException;
 import java.util.*;
 
 /**
@@ -216,51 +214,14 @@ public class CrawlerController {
     /**
      * 校验爬取目标 URL。
      * <p>
-     * 只放行 http/https，并拒绝指向本机、内网、链路本地（含云厂商元数据地址
-     * 169.254.169.254）的主机，避免爬虫被当作访问内网服务的跳板。
-     * 若你确实需要爬取内网站点，去掉下面 isSiteLocalAddress 等几个判断即可。
-     * <p>
-     * 局限：这是发起请求前的静态校验，目标站点用 302 跳转到内网仍可绕过。
+     * 具体规则见 {@link UrlSafetyValidator}。这里只做入口把关，
+     * 真正的兜底在 {@code WebCrawlerService} 每次发起请求前——因为页面里
+     * 发现的链接和 302 跳转的目标都不经过本方法。
      *
      * @return null 表示校验通过，否则返回给调用方的错误信息
      */
     private String validateFetchUrl(String url) {
-        if (url == null || url.isBlank()) {
-            return "URL 不能为空";
-        }
-        String trimmed = url.trim();
-        String lower = trimmed.toLowerCase(Locale.ROOT);
-        if (!lower.startsWith("http://") && !lower.startsWith("https://")) {
-            return "URL 必须以 http:// 或 https:// 开头";
-        }
-        try {
-            URI uri = URI.create(trimmed);
-            String host = uri.getHost();
-            if (host == null || host.isBlank()) {
-                return "URL 缺少主机名";
-            }
-            for (InetAddress addr : InetAddress.getAllByName(host)) {
-                if (isInternalAddress(addr)) {
-                    return "不允许爬取内网或本机地址: " + host;
-                }
-            }
-        } catch (IllegalArgumentException e) {
-            return "URL 格式不正确";
-        } catch (UnknownHostException e) {
-            return "无法解析主机名";
-        }
-        return null;
-    }
-
-    /** 判断是否为回环 / 任意本地 / 链路本地 / 内网 / IPv6 ULA 地址 */
-    private boolean isInternalAddress(InetAddress addr) {
-        if (addr.isLoopbackAddress() || addr.isAnyLocalAddress()
-                || addr.isLinkLocalAddress() || addr.isSiteLocalAddress()) {
-            return true;
-        }
-        // IPv6 唯一本地地址 fc00::/7（JDK 未提供现成判断）
-        byte[] bytes = addr.getAddress();
-        return bytes.length == 16 && (bytes[0] & 0xFE) == 0xFC;
+        return UrlSafetyValidator.check(url);
     }
 
     private int getInt(Map<String, Object> body, String key, int defaultVal) {

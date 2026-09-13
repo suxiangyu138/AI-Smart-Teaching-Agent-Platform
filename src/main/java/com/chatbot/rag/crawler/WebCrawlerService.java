@@ -5,6 +5,7 @@ import com.chatbot.rag.document.MathChunkingStrategy;
 import com.chatbot.rag.embedding.EmbeddingService;
 import com.chatbot.rag.model.DocumentChunk;
 import com.chatbot.rag.vector.LuceneVectorStore;
+import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -348,32 +350,37 @@ public class WebCrawlerService {
      * 4. 保留标题标签（h1-h6）作为结构标记
      * 5. 保留列表（li）、段落（p）、表格（table）结构
      */
+    /** 重定向最大跳数（与 Jsoup 自动跟随时的内置上限保持一致） */
+    private static final int MAX_REDIRECTS = 20;
+
+    /**
+     * 地址不安全、或跳转目标无法判定是否安全时抛出。
+     * <p>
+     * 单独建类型是为了与普通网络异常区分：这类失败不能重试，
+     * 更不能回退给 Playwright——Playwright 自己会跟随跳转，
+     * 等于把刚拦下的地址又送出去一次。
+     */
+    private static class BlockedUrlException extends IOException {
+        BlockedUrlException(String message) {
+            super(message);
+        }
+    }
+
     /** 抓取页面（Jsoup → Playwright 回退） */
     private Document fetchPage(String url, CrawlRequest req) throws IOException {
+        // 收口校验：除了种子 URL，页面里发现的链接也会走到这里，
+        // 只在校验入口把关会漏掉它们。
+        String blocked = UrlSafetyValidator.check(url);
+        if (blocked != null) {
+            throw new BlockedUrlException("已拦截: " + blocked + " → " + url);
+        }
         // 先试 Jsoup（快速，适合服务端渲染页面）
         IOException lastEx = null;
         for (int attempt = 0; attempt < 2; attempt++) {
             try {
-                Document doc = Jsoup.connect(url)
-                        .userAgent(req.getUserAgent())
-                        .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
-                        .header("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
-                        .header("Accept-Encoding", "gzip, deflate, br")
-                        .header("Cache-Control", "max-age=0")
-                        .header("sec-ch-ua", "\"Chromium\";v=\"131\", \"Google Chrome\";v=\"131\"")
-                        .header("sec-ch-ua-mobile", "?0")
-                        .header("sec-ch-ua-platform", "\"Windows\"")
-                        .header("sec-fetch-dest", "document")
-                        .header("sec-fetch-mode", "navigate")
-                        .header("sec-fetch-site", "same-origin")
-                        .header("sec-fetch-user", "?1")
-                        .header("Upgrade-Insecure-Requests", "1")
-                        .referrer("https://www.google.com/")
-                        .timeout(req.getTimeoutSeconds() * 1000)
-                        .followRedirects(true)
-                        .maxBodySize(5 * 1024 * 1024)
-                        .get();
-                return doc;
+                return fetchFollowingRedirects(url, req);
+            } catch (BlockedUrlException e) {
+                throw e;
             } catch (IOException e) {
                 lastEx = e;
                 try { Thread.sleep(2000L * (attempt + 1)); } catch (InterruptedException ignored) {}
@@ -389,6 +396,121 @@ public class WebCrawlerService {
             }
         }
         throw lastEx != null ? lastEx : new IOException("抓取失败且无 Playwright: " + url);
+    }
+
+    /**
+     * 手动跟随重定向，每一跳都重新做地址安全校验。
+     * <p>
+     * 不能用 Jsoup 自带的 {@code followRedirects(true)}：它只在最后一跳结束时
+     * 才知道落到哪里，目标站点返回 {@code 302 Location: http://127.0.0.1:9200/}
+     * 就能把请求带进内网。改为逐跳处理，拿到 Location 先校验再决定是否继续。
+     * <p>
+     * 请求头、超时、体积上限、Cookie 传递都与原先的自动跟随保持一致，
+     * 因此正常站点的表现不变。
+     */
+    private Document fetchFollowingRedirects(String url, CrawlRequest req)
+            throws IOException {
+        String current = url;
+        Map<String, String> cookies = new LinkedHashMap<>();
+
+        for (int hop = 0; hop <= MAX_REDIRECTS; hop++) {
+            Connection.Response resp = newConnection(current, req)
+                    .cookies(cookies)
+                    .followRedirects(false)
+                    .execute();
+
+            if (!isRedirectStatus(resp.statusCode())) {
+                return resp.parse();
+            }
+
+            String location = resp.header("Location");
+            if (location == null || location.isBlank()) {
+                throw new IOException("重定向缺少 Location 头: " + current);
+            }
+            // 读掉响应体，避免连接不释放（重定向响应体通常是空的）
+            resp.body();
+
+            String next = resolveLocation(current, location);
+            String blocked = UrlSafetyValidator.check(next);
+            if (blocked != null) {
+                throw new BlockedUrlException("重定向目标已拦截: " + blocked
+                        + "（由 " + current + " 跳转）");
+            }
+            cookies.putAll(resp.cookies());
+            current = next;
+        }
+        throw new IOException("重定向次数超过 " + MAX_REDIRECTS + " 次: " + url);
+    }
+
+    /** 构造带统一请求头的 Jsoup 连接（不设 followRedirects，由调用方决定） */
+    private Connection newConnection(String url, CrawlRequest req) {
+        return Jsoup.connect(url)
+                .userAgent(req.getUserAgent())
+                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
+                .header("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
+                .header("Accept-Encoding", "gzip, deflate, br")
+                .header("Cache-Control", "max-age=0")
+                .header("sec-ch-ua", "\"Chromium\";v=\"131\", \"Google Chrome\";v=\"131\"")
+                .header("sec-ch-ua-mobile", "?0")
+                .header("sec-ch-ua-platform", "\"Windows\"")
+                .header("sec-fetch-dest", "document")
+                .header("sec-fetch-mode", "navigate")
+                .header("sec-fetch-site", "same-origin")
+                .header("sec-fetch-user", "?1")
+                .header("Upgrade-Insecure-Requests", "1")
+                .referrer("https://www.google.com/")
+                .timeout(req.getTimeoutSeconds() * 1000)
+                .maxBodySize(5 * 1024 * 1024);
+    }
+
+    /** Jsoup 会自动跟随的几种重定向状态码，保持一致以免改变既有行为 */
+    private static boolean isRedirectStatus(int status) {
+        return status == 301 || status == 302 || status == 303
+                || status == 307 || status == 308;
+    }
+
+    /**
+     * 把 Location 解析为绝对地址。
+     * <p>
+     * 部分站点（尤其中文站）会返回带中文或空格的未编码 Location，
+     * 而 {@link URI} 只接受已编码字符，直接解析会失败。这里先把这些字符
+     * 转义再解析，避免正常站点因为一个不规范的响应头就用不了。
+     * 转义后仍解析不了，说明 Location 确实不可用——此时按「不安全」处理，
+     * 宁可放弃这个页面，也不能把它交给会自动跟随跳转的 Playwright。
+     */
+    private String resolveLocation(String current, String location) throws IOException {
+        String trimmed = location.trim();
+        try {
+            return URI.create(current).resolve(trimmed).toString();
+        } catch (IllegalArgumentException first) {
+            try {
+                return URI.create(current)
+                        .resolve(URI.create(escapeIllegalUriChars(trimmed)))
+                        .toString();
+            } catch (IllegalArgumentException second) {
+                throw new BlockedUrlException("重定向 Location 无法解析: " + location);
+            }
+        }
+    }
+
+    /** 按 UTF-8 转义 URI 中不允许直接出现的字符（空格、非 ASCII） */
+    private static String escapeIllegalUriChars(String raw) {
+        StringBuilder sb = new StringBuilder(raw.length());
+        for (int i = 0; i < raw.length(); ) {
+            int cp = raw.codePointAt(i);
+            if (cp == ' ') {
+                sb.append("%20");
+            } else if (cp > 0x7F) {
+                for (byte b : new String(Character.toChars(cp))
+                        .getBytes(StandardCharsets.UTF_8)) {
+                    sb.append('%').append(String.format("%02X", b));
+                }
+            } else {
+                sb.append((char) cp);
+            }
+            i += Character.charCount(cp);
+        }
+        return sb.toString();
     }
 
     private String extractContent(Document doc, String url) {
