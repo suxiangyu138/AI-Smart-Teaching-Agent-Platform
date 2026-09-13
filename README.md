@@ -38,8 +38,9 @@
 | 网页爬虫 | BFS 爬虫 + Playwright 渲染 + FormulaNormalizer 公式标准化 |
 | OCR 识别 | PaddleOCR + Pix2Tex + MathPix 三通道 · 扫描版 PDF 支持 |
 | 错题本 | LocalStorage 持久化 · 按学段分类 |
-| API Key 本地 | 浏览器 localStorage，不上传服务端 |
-| 限流保护 | 30 次/分钟/IP |
+| API Key 本地 | 存于浏览器 localStorage，随请求发给本机服务端并转发给模型厂商；当前界面不会把它写入服务端配置 |
+| 限流保护 | 对话 30 次/分钟/IP，其余接口 300 次/分钟/IP |
+| 默认只监听本机 | 服务绑定 127.0.0.1，局域网内其他设备无法访问 |
 
 ---
 

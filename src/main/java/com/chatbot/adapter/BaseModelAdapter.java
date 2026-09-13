@@ -12,6 +12,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Locale;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -135,7 +136,21 @@ public abstract class BaseModelAdapter {
 
     private String buildUrl(UnifiedChatRequest req) {
         if (req.getBaseUrl() != null && !req.getBaseUrl().isBlank()) {
-            return req.getBaseUrl() + "/chat/completions";
+            String base = req.getBaseUrl().trim();
+            // 只接受 http/https。baseUrl 由请求方提供，属于不可信输入，
+            // 限制协议可避免 file: 之类的 scheme 被带进 HTTP 客户端。
+            // 注意：这里刻意不封禁内网/回环地址——本地 Ollama、LM Studio
+            // 等自建模型服务依赖该能力。
+            String lower = base.toLowerCase(Locale.ROOT);
+            if (!lower.startsWith("http://") && !lower.startsWith("https://")) {
+                throw new IllegalArgumentException(
+                        "baseUrl 必须以 http:// 或 https:// 开头");
+            }
+            // 去掉结尾斜杠，避免拼接出 //chat/completions
+            while (base.endsWith("/")) {
+                base = base.substring(0, base.length() - 1);
+            }
+            return base + "/chat/completions";
         }
         return "https://api.deepseek.com/v1/chat/completions";
     }

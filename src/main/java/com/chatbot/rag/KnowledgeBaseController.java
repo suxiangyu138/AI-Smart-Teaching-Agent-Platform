@@ -123,6 +123,10 @@ public class KnowledgeBaseController {
         if (!Files.exists(pdfPath)) {
             return error("文件不存在: " + filePath);
         }
+        // 只允许索引知识库目录内的文件
+        if (!isInsideKbDir(pdfPath)) {
+            return error("仅允许索引知识库目录内的文件");
+        }
         // 优先用显式指定，否则从路径自动检测学段
         String stage = body.get("stage");
         if (stage == null) {
@@ -210,6 +214,10 @@ public class KnowledgeBaseController {
         if (!Files.isDirectory(path)) {
             return error("目录不存在: " + dirPath);
         }
+        // 只允许索引知识库目录及其子目录
+        if (!isInsideKbDir(path)) {
+            return error("仅允许索引知识库目录内的文件");
+        }
         // 学段留空 → null，由 RagService 按文件名逐文件自动识别
         String stage = body.get("stage");
         if (stage != null && stage.isBlank()) {
@@ -237,6 +245,26 @@ public class KnowledgeBaseController {
     }
 
     /** 从路径自动检测学段（支持学段名 + 学科名） */
+    /**
+     * 校验路径是否位于知识库目录内（含其子目录）。
+     * <p>
+     * 索引类接口的 filePath / dirPath 由请求方提供，若不限制范围，
+     * 调用方就能把主机上任意目录的 PDF 索引进库，再通过
+     * /api/knowledge/search 把内容读回来，等于任意文件读取。
+     * <p>
+     * 用 toRealPath() 做判断：它会把符号链接和 {@code ..} 一并解析掉，
+     * 因此指向库外的软链接也会被拒。调用方需先确认路径存在。
+     */
+    private boolean isInsideKbDir(Path path) {
+        try {
+            Path kbRoot = ragService.getKbDir().toRealPath();
+            return path.toRealPath().startsWith(kbRoot);
+        } catch (IOException e) {
+            // 路径不可解析（不存在 / 无权限）→ 一律拒绝
+            return false;
+        }
+    }
+
     @SuppressWarnings("all")
     private String detectStageFromPath(Path path) {
         String lower = path.toString().toLowerCase();
@@ -370,6 +398,10 @@ public class KnowledgeBaseController {
         if (!Files.isDirectory(path)) {
             return error("目录不存在: " + dirPath);
         }
+        // 只允许索引知识库目录及其子目录
+        if (!isInsideKbDir(path)) {
+            return error("仅允许索引知识库目录内的文件");
+        }
         // 学段留空 → null，由 RagService 按文件名逐文件自动识别
         String stage = body.get("stage");
         if (stage != null && stage.isBlank()) {
@@ -403,6 +435,10 @@ public class KnowledgeBaseController {
         Path path = Path.of(dirPath);
         if (!Files.isDirectory(path)) {
             return error("目录不存在: " + dirPath);
+        }
+        // 只允许索引知识库目录及其子目录
+        if (!isInsideKbDir(path)) {
+            return error("仅允许索引知识库目录内的文件");
         }
         // 学段留空 → null，由 RagService 按文件名逐文件自动识别
         String stage = body.get("stage");

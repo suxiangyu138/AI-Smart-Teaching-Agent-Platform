@@ -6,6 +6,11 @@ target/
 .idea/
 *.iml
 .vscode/
+
+# Claude Code 本机配置（含本地绝对路径与命令白名单，不应提交）
+# 注：settings.local.json 通常由全局 gitignore 兜住，但那条规则不随仓库走，
+# 所以这里再显式忽略一次。
+.claude/settings.local.json
 .settings/
 .project
 .classpath

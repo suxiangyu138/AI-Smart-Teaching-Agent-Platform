@@ -8,6 +8,8 @@
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<!-- 本地文件（非 CDN）：AI 回答与知识库内容一律先净化再插入 DOM -->
+<script src="/dompurify.min.js"></script>
 <script>
 marked.use({breaks:true,gfm:true,renderer:{code({text:code,lang}){
   if(lang&&typeof hljs!=='undefined'&&hljs.getLanguage(lang)){try{var h=hljs.highlight(code,{language:lang,ignoreIllegals:true});
@@ -497,6 +499,20 @@ function loadErrorItem(idx){
 }
 function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
+/**
+ * 净化将要写入 innerHTML 的 HTML。
+ * AI 回答会经过 marked 渲染，而 marked 默认不清理 HTML；知识库内容又可能
+ * 来自爬取的网页，因此模型有机会回显恶意标签 → XSS → 偷走 localStorage
+ * 里的各家 API Key。这里统一用 DOMPurify 过滤。
+ * 保留 mathMl/svg：KaTeX 的公式输出依赖它们，不能裁掉。
+ */
+function sanitizeHtml(html){
+  if(typeof DOMPurify==='undefined')return html;  // 兜底：库未加载时保持原行为
+  try{
+    return DOMPurify.sanitize(html,{USE_PROFILES:{html:true,mathMl:true,svg:true}});
+  }catch(e){return html}
+}
+
 // ===== 主题 =====
 function toggleTheme(){isDark=!isDark;document.body.classList.toggle('light',!isDark);document.getElementById('theme-btn').textContent=isDark?'浅色模式':'深色模式';localStorage.setItem('theme',isDark?'dark':'light')}
 if(localStorage.getItem('theme')==='light'){isDark=false;document.body.classList.add('light');document.getElementById('theme-btn').textContent='深色模式'}
@@ -587,8 +603,8 @@ function addMessage(text,sender){
   let w=document.querySelector('.welcome-card');if(w)w.remove();
   let row=document.createElement('div');row.className='row '+sender;
   let bubble=document.createElement('div');bubble.className='bubble';
-  if(sender==='ai')bubble.innerHTML=marked.parse(renderLatex(text));
-  else if(sender==='system')bubble.innerHTML=text;
+  if(sender==='ai')bubble.innerHTML=sanitizeHtml(marked.parse(renderLatex(text)));
+  else if(sender==='system')bubble.innerHTML=escapeHtml(text);
   else bubble.textContent=text;
   let time=document.createElement('div');time.className='time-stamp';time.textContent=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
   row.appendChild(time);row.appendChild(bubble);chatList.appendChild(row);
@@ -607,7 +623,7 @@ function _doRender(text,isFinal){
   var bubble=row.querySelector('.bubble');
   // 只重绘答案区域，保留思考面板 DOM 不被清掉
   var target=bubble.querySelector('#answer-block')||bubble;
-  target.innerHTML=marked.parse(rendered);
+  target.innerHTML=sanitizeHtml(marked.parse(rendered));
   if(!userScrolledUp)debounceScroll();
 }
 function updateAiBubbleFinal(text){
@@ -935,7 +951,7 @@ async function refreshKbFileList(){
     kbFileListCache=files||[];
     let list=document.getElementById('kb-file-list');
     if(!files.length){list.innerHTML='<div class="empty-hint">知识库目录为空<br>可上传PDF或放入目录后刷新</div>';return}
-    list.innerHTML=files.map((f,i)=>'<div class="kb-file-item"><span class="fn">'+f.name+'</span><span class="fs">'+(f.size/1024).toFixed(1)+' KB</span><span class="kb-del" onclick="event.stopPropagation();removeKbDocumentIdx('+i+')">删除</span></div>').join('');
+    list.innerHTML=files.map((f,i)=>'<div class="kb-file-item"><span class="fn">'+escapeHtml(String(f.name))+'</span><span class="fs">'+(f.size/1024).toFixed(1)+' KB</span><span class="kb-del" onclick="event.stopPropagation();removeKbDocumentIdx('+i+')">删除</span></div>').join('');
   }catch(e){document.getElementById('kb-file-list').innerHTML='<div class="empty-hint">加载失败</div>'}
 }
 async function uploadKbFiles(){
@@ -957,9 +973,9 @@ async function uploadKbFiles(){
       let d;
       try{d=await r.json()}
       catch(e){throw new Error('服务器中断了响应（文件可能超限，建议放入知识库目录后批量索引）')}
-      if(d.success){log.innerHTML+='成功: '+f.name+'（'+d.stage+'，'+d.chunkCount+' 块）\n';ok++}
-      else{log.innerHTML+='失败: '+f.name+' - '+(d.error||'未知错误')+'\n'}
-    }catch(e){log.innerHTML+='失败: '+f.name+' - '+e.message+'\n'}
+      if(d.success){log.innerHTML+='成功: '+escapeHtml(String(f.name))+'（'+escapeHtml(String(d.stage))+'，'+d.chunkCount+' 块）\n';ok++}
+      else{log.innerHTML+='失败: '+escapeHtml(String(f.name))+' - '+escapeHtml(String(d.error||'未知错误'))+'\n'}
+    }catch(e){log.innerHTML+='失败: '+escapeHtml(String(f.name))+' - '+escapeHtml(String(e.message))+'\n'}
   }
   input.value='';document.getElementById('kb-upload-label').textContent='';
   await refreshKbFileList();await refreshKbStats();await updateKbStatus();
@@ -999,11 +1015,11 @@ async function buildKbIndex(){
     let result=await r.json();
     if(result.success){
       log.innerHTML+='索引完成！成功 '+result.successFiles+'/'+result.totalFiles+' 个文件\n';
-      if(result.details){for(let[k,v]of Object.entries(result.details)){log.innerHTML+=('  '+k+': '+(v>0?v+' 块':'失败')+'\n')}}
+      if(result.details){for(let[k,v]of Object.entries(result.details)){log.innerHTML+=('  '+escapeHtml(String(k))+': '+(v>0?v+' 块':'失败')+'\n')}}
       fill.style.width='100%';txt.textContent='索引完成';
       await refreshKbFileList();await refreshKbStats();await updateKbStatus();
-    }else{log.innerHTML+='失败: '+result.error+'\n';fill.style.width='0%'}
-  }catch(e){log.innerHTML+='索引失败: '+e.message+'\n';clearInterval(buildPollTimer)}
+    }else{log.innerHTML+='失败: '+escapeHtml(String(result.error))+'\n';fill.style.width='0%'}
+  }catch(e){log.innerHTML+='索引失败: '+escapeHtml(String(e.message))+'\n';clearInterval(buildPollTimer)}
   setTimeout(()=>{bar.style.display='none';txt.style.display='none'},3000);
 }
 async function buildKbIncremental(){
@@ -1018,8 +1034,8 @@ async function buildKbIncremental(){
     if(result.success){
       log.innerHTML+='增量完成！新增 '+result.newFiles+' 文件，跳过 '+result.skippedFiles+'\n';
       await refreshKbFileList();await refreshKbStats();await updateKbStatus();
-    }else{log.innerHTML+='失败: '+result.error+'\n'}
-  }catch(e){log.innerHTML+='失败: '+e.message+'\n'}
+    }else{log.innerHTML+='失败: '+escapeHtml(String(result.error))+'\n'}
+  }catch(e){log.innerHTML+='失败: '+escapeHtml(String(e.message))+'\n'}
 }
 async function configMathPix(){
   let appId=prompt('MathPix App ID (https://mathpix.com/ 注册获取):');
@@ -1039,9 +1055,9 @@ async function retryFailedWithOcr(){
     let r=await fetch('/api/knowledge/retry-ocr',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dirPath:dirData.directory})});
     let result=await r.json();
     if(result.success){log.innerHTML+='OCR重试完成！新增 '+result.newFiles+' 文件\n';fill.style.width='100%'}
-    else{log.innerHTML+='失败: '+result.error+'\n'}
+    else{log.innerHTML+='失败: '+escapeHtml(String(result.error))+'\n'}
     await refreshKbStats();await updateKbStatus();await loadFailedFiles();
-  }catch(e){log.innerHTML+='失败: '+e.message+'\n'}
+  }catch(e){log.innerHTML+='失败: '+escapeHtml(String(e.message))+'\n'}
   setTimeout(()=>bar.style.display='none',3000);
 }
 async function loadFailedFiles(){
@@ -1259,7 +1275,7 @@ function toggleThink(){
   if(isOpen){
     var tc=document.getElementById('think-content');
     if(tc&&tc.textContent){
-      tc.innerHTML=marked.parse(renderLatex(tc.textContent,true));
+      tc.innerHTML=sanitizeHtml(marked.parse(renderLatex(tc.textContent,true)));
     }
   }
   // 持久化状态
