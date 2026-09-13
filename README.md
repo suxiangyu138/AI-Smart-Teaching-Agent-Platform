@@ -2,6 +2,7 @@
 
 <p align="center"><strong>K12+大学 数学 RAG 智能辅导平台 — 多模型聚合 · 深空玻璃拟态 · 对话历史 · 思考可视化</strong></p>
 <p align="center">6 家大模型 · 四层学段适配 · PDF 知识库 · LaTeX 渲染 · 流式平滑输出 · 思考过程折叠</p>
+<p align="center"><sub>本仓库原名 <code>LlmChatBot_sxy</code>，2026-09 更名为 <code>AI-Smart-Teaching-Agent-Platform</code>。项目、代码与提交历史均未变动，只是改了名字——旧链接会由 GitHub 自动跳转到此处。</sub></p>
 
 ---
 
